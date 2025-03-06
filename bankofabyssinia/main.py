@@ -35,8 +35,6 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
 from prompt import get_system_prompt
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 from services.profile_service import ProfileService
 from services.memory_service import MemoryService
 from config import UserProfile
@@ -47,7 +45,7 @@ from services.db_service import DatabaseService
 from tools.tools import BankingTools
 from enum import Enum
 # from loguru import logger
-from utils import TEMP_ROUTES, get_fernet_key, ogg2mp3, process_background_tasks
+from utils import TEMP_ROUTES, get_fernet_key, ogg2mp3, ogg_to_mp3_s3, ogg_to_mp3_s3_url, process_background_tasks
 from cryptography.fernet import Fernet
 from analytics_routes import users_analytics #, modelling_routes
 import assemblyai as aai
@@ -56,11 +54,15 @@ from langchain_openai import OpenAIEmbeddings
 import pytz
 from langchain_core.vectorstores import InMemoryVectorStore
 from openai import OpenAI
+from langchain_google_community import SpeechToTextLoader
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg import Connection
 from psycopg_pool import ConnectionPool
+import nest_asyncio
+# nest_asyncio.apply()
 from loguru import logger
-
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+assemply_key = os.getenv('ASSEMBLY_AI_API_KEY ')
 # logging.basicConfig(
 #     level=logging.INFO,
 #     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -77,8 +79,6 @@ from loguru import logger
 # Connection configuration
 
 load_dotenv()
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-assemply_key = os.getenv('ASSEMBLY_AI_API_KEY ')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 HF_TOKEN = os.getenv('HF_TOKEN')
@@ -88,6 +88,7 @@ TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_NUMBER = os.getenv('TWILIO_NUMBER')
 BACKEND_URL = os.getenv('BACKEND_URL')
 VERIFY_URL = os.getenv('VERIFY_URL')
+PROJECT_ID = os.getenv('PROJECT_ID')
 db_username = os.getenv('DB_USERNAME')
 db_host = os.getenv('DB_HOST')
 db = os.getenv('DB_NAME')
@@ -290,6 +291,15 @@ async def setup_tools():
         raise_for_status=False,
         requests_kwargs={"verify": False}
     )
+    # loader = WebBaseLoader(web_paths=BANK_URLS,  
+    #     verify_ssl=False,
+    #     continue_on_failure=False,
+    #     raise_for_status=False,
+    #     requests_kwargs={"verify": False}
+    # )
+    # loader.requests_per_second = 1
+    # docs = loader.aload()
+    # docs
 
     docs = []
     for doc in loader.lazy_load():
@@ -312,25 +322,25 @@ async def setup_tools():
     # Extract text content from documents
     texts = [doc.page_content for doc in clean_docs]
     
-    # embeddings = OpenAIEmbeddings(
-    #     model="text-embedding-3-large", 
-    #     chunk_size=1000,
-    #     max_retries=2,
-    #     show_progress_bar=True
-    # )
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-large", 
+        chunk_size=1000,
+        max_retries=2,
+        show_progress_bar=True
+    )
 
     
-    embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
-        # cache_folder="./model_cache",  # Cache models locally
-        # model_kwargs={'device': 'cpu'}  # Force CPU usage if memory limited
-        )
-    vectorstore = Chroma.from_documents(clean_docs, embeddings)
-    # Create vectorstore from texts
-    # vectorstore = InMemoryVectorStore.from_texts(
-    #     texts=texts,
-    #     embedding=embeddings,
-    # )
+    # embeddings = HuggingFaceEmbeddings(
+    #     model_name="all-MiniLM-L6-v2"
+    #     # cache_folder="./model_cache",  # Cache models locally
+    #     # model_kwargs={'device': 'cpu'}  # Force CPU usage if memory limited
+    #     )
+    # vectorstore = Chroma.from_documents(clean_docs, embeddings)
+    # # Create vectorstore from texts
+    vectorstore = InMemoryVectorStore.from_texts(
+        texts=texts,
+        embedding=embeddings,
+    )
 
     retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
     rag_tool = create_retriever_tool(
@@ -400,7 +410,6 @@ def create_graph(system_prompt: str, tools: List, phone_number: str,incoming_msg
     )
 
     checkpointer = PostgresSaver(pool)
-    checkpointer.setup()
     # checkpointer.setup()
     builder = StateGraph(State)
     builder.add_node("chatbot", chatbot)
@@ -549,7 +558,14 @@ async def webhook(request: Request, background_tasks: BackgroundTasks, db: Sessi
                     # mp3_buffer = io.BytesIO(mp3_data)
                     # mp3_buffer.seek(0) 
                     mp3_data = await ogg2mp3(media_url)
-                    
+                    # mp3_data_google = await ogg_to_mp3_s3_url(media_url)
+                    # logger.info(f"Converted voice note to mp3: {mp3_data_google}")
+                    # loader = SpeechToTextLoader(project_id=PROJECT_ID, file_path=mp3_data_google)
+    
+                    # # Get the transcription results
+                    # docs = loader.load()
+
+                    # transcription_text = docs[0].page_content
                     # Create file object for OpenAI
                     file_obj = io.BytesIO(mp3_data)
                     file_obj.name = "audio.mp3"  # OpenAI needs filename
@@ -831,4 +847,4 @@ async def shutdown_event():
     logger.info("Application shutdown, resources cleaned up")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True,log_level="debug")
+    uvicorn.run("main:app", host="0.0.0.0", port=8037, reload=True,log_level="debug")

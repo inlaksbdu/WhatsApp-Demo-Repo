@@ -1,6 +1,7 @@
 from email.mime.application import MIMEApplication
 import io
 import random
+import shutil
 import smtplib
 import ssl
 import subprocess
@@ -644,6 +645,167 @@ class AsyncEmailService:
                 "message": error_msg,
                 "escalated_to": __arg1.get('escalating_to')
             }
+async def ogg_to_mp3_s3_local_file(audio_path: str) -> str:
+    """
+    Convert OGG audio to MP3, save to S3, and return the file path for Google Cloud Speech-to-Text.
+    Works with local files or URLs.
+    
+    Args:
+        audio_path: Path to local OGG file or URL of the OGG file
+        
+    Returns:
+        str: Local file path to the MP3 file for use with Google Cloud Speech-to-Text
+    """
+    try:
+        # Initialize S3 client
+        s3_client = boto3.client('s3')
+        
+        # Generate unique filename using timestamp
+        timestamp = int(time.time())
+        filename = f"audio_transcription_{timestamp}"
+        
+        # File paths
+        temp_ogg_path = f"/tmp/{filename}.ogg"
+        temp_mp3_path = f"/tmp/{filename}.mp3"
+        
+        # S3 bucket and key
+        s3_bucket = "whataudio"
+        s3_key = f"transcriptions/{filename}.mp3"
+        
+        # Handle local file or URL
+        if audio_path.startswith(('http://', 'https://')):
+            # It's a URL - download it
+            logging.info(f"Downloading from URL: {audio_path}")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(audio_path, allow_redirects=True) as response:
+                    if response.status == 200:
+                        audio_data = await response.read()
+                    else:
+                        raise Exception(f"Failed to download audio: {response.status}")
+                        
+            # Save the downloaded OGG file temporarily
+            with open(temp_ogg_path, 'wb') as f:
+                f.write(audio_data)
+        else:
+            # It's a local file - copy it to temp location or use directly
+            logging.info(f"Processing local file: {audio_path}")
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"Local audio file not found: {audio_path}")
+                
+            # Either copy to temp location or use directly
+            if os.path.dirname(audio_path) != '/tmp':
+                # Copy to temp location
+                shutil.copy2(audio_path, temp_ogg_path)
+            else:
+                # Already in temp, just use it
+                temp_ogg_path = audio_path
+        
+        # Convert OGG to MP3 using pydub
+        logging.info("Converting OGG to MP3")
+        audio = AudioSegment.from_ogg(temp_ogg_path)
+        audio.export(temp_mp3_path, format='mp3')
+        
+        # Upload to S3
+        logging.info("Uploading MP3 to S3")
+        with open(temp_mp3_path, 'rb') as audio_file:
+            s3_client.upload_fileobj(
+                audio_file, 
+                s3_bucket, 
+                s3_key,
+                ExtraArgs={'ContentType': 'audio/mpeg'}
+            )
+        
+        # Log S3 upload
+        logging.info(f"File uploaded to S3: {s3_bucket}/{s3_key}")
+        
+        # Clean up the temporary OGG file if we created it
+        if temp_ogg_path != audio_path and os.path.exists(temp_ogg_path):
+            os.remove(temp_ogg_path)
+        
+        # Return the local MP3 file path for Google Cloud Speech-to-Text
+        return temp_mp3_path
+        
+    except Exception as e:
+        logging.error(f"Error in ogg_to_mp3_s3: {str(e)}")
+        # Cleanup any temp files if they exist
+        if 'temp_ogg_path' in locals() and os.path.exists(temp_ogg_path) and temp_ogg_path != audio_path:
+            os.remove(temp_ogg_path)
+        if 'temp_mp3_path' in locals() and os.path.exists(temp_mp3_path):
+            os.remove(temp_mp3_path)
+        raise
+
+
+async def ogg_to_mp3_s3(audio_url: str) -> str:
+    """
+    Convert OGG audio to MP3, save to S3, and return the file path for Google Cloud Speech-to-Text
+    
+    Args:
+        audio_url: URL of the OGG audio file
+        
+    Returns:
+        str: Local file path to the downloaded MP3 file for use with Google Cloud Speech-to-Text
+    """
+    try:
+        # Initialize S3 client
+        s3_client = boto3.client('s3')
+        
+        # Generate unique filename using timestamp
+        timestamp = int(time.time())
+        filename = f"audio_transcription_{timestamp}"
+        
+        # File paths
+        temp_ogg_path = f"/tmp/{filename}.ogg"
+        temp_mp3_path = f"/tmp/{filename}.mp3"
+        
+        # S3 bucket and key
+        s3_bucket = "whataudio"
+        s3_key = f"transcriptions/{filename}.mp3"
+        
+        # Download the OGG file
+        async with aiohttp.ClientSession() as session:
+            async with session.get(audio_url, allow_redirects=True) as response:
+                if response.status == 200:
+                    audio_data = await response.read()
+                else:
+                    raise Exception(f"Failed to download audio: {response.status}")
+        
+        # Save the OGG file temporarily
+        with open(temp_ogg_path, 'wb') as f:
+            f.write(audio_data)
+        
+        # Convert OGG to MP3 using pydub
+        logging.info("Converting OGG to MP3")
+        audio = AudioSegment.from_ogg(temp_ogg_path)
+        audio.export(temp_mp3_path, format='mp3')
+        
+        # Upload to S3
+        logging.info("Uploading MP3 to S3")
+        with open(temp_mp3_path, 'rb') as audio_file:
+            s3_client.upload_fileobj(
+                audio_file, 
+                s3_bucket, 
+                s3_key,
+                ExtraArgs={'ContentType': 'audio/mpeg'}
+            )
+        
+        # Log S3 upload
+        logging.info(f"File uploaded to S3: {s3_bucket}/{s3_key}")
+        
+        # Clean up the temporary OGG file
+        os.remove(temp_ogg_path)
+        
+        # Return the local MP3 file path for Google Cloud Speech-to-Text
+        return temp_mp3_path
+        
+    except Exception as e:
+        logging.error(f"Error in ogg_to_mp3_s3: {str(e)}")
+        # Cleanup any temp files if they exist
+        if os.path.exists(temp_ogg_path):
+            os.remove(temp_ogg_path)
+        if os.path.exists(temp_mp3_path):
+            os.remove(temp_mp3_path)
+        raise
+
 
 async def text_to_whatsapp_audio(text: str) -> str:
     """
@@ -742,7 +904,89 @@ async def text_to_whatsapp_audio(text: str) -> str:
         logging.error(f"Error in text_to_whatsapp_audio: {str(e)}")
         raise
 
+async def ogg_to_mp3_s3_url(audio_url: str) -> str:
+    """
+    Convert OGG audio to MP3, save to S3, and return the file path for Google Cloud Speech-to-Text
     
+    Args:
+        audio_url: URL of the OGG audio file
+        
+    Returns:
+        str: Local file path to the downloaded MP3 file for use with Google Cloud Speech-to-Text
+    """
+    try:
+        # Initialize S3 client
+        s3_client = boto3.client('s3')
+        
+        # Generate unique filename using timestamp
+        timestamp = int(time.time())
+        filename = f"audio_transcription_{timestamp}"
+        
+        # File paths
+        temp_ogg_path = f"/tmp/{filename}.ogg"
+        temp_mp3_path = f"/tmp/{filename}.mp3"
+        
+        # S3 bucket and key
+        s3_bucket = "whataudio"
+        s3_key = f"transcriptions/{filename}.mp3"
+        
+        # Get Twilio credentials
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        
+        # Download the OGG file with authentication
+        async with aiohttp.ClientSession() as session:
+            # Make authenticated request to Twilio media URL
+            logging.info(f"Making authenticated request to Twilio media URL: {audio_url}")
+            auth = aiohttp.BasicAuth(account_sid, auth_token)
+            
+            async with session.get(audio_url, auth=auth, allow_redirects=True) as response:
+                if response.status == 200:
+                    logging.info("Successfully downloaded voice message")
+                    audio_data = await response.read()
+                else:
+                    error_msg = f"Failed to download audio: {response.status}"
+                    logging.error(error_msg)
+                    if response.status == 401:
+                        logging.error("Authentication failed. Please check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN")
+                    raise Exception(error_msg)
+        
+        # Save the OGG file temporarily
+        with open(temp_ogg_path, 'wb') as f:
+            f.write(audio_data)
+        
+        # Convert OGG to MP3 using pydub
+        logging.info("Converting OGG to MP3")
+        audio = AudioSegment.from_ogg(temp_ogg_path)
+        audio.export(temp_mp3_path, format='mp3')
+        
+        # Upload to S3
+        logging.info("Uploading MP3 to S3")
+        with open(temp_mp3_path, 'rb') as audio_file:
+            s3_client.upload_fileobj(
+                audio_file, 
+                s3_bucket, 
+                s3_key,
+                ExtraArgs={'ContentType': 'audio/mpeg'}
+            )
+        
+        # Log S3 upload
+        logging.info(f"File uploaded to S3: {s3_bucket}/{s3_key}")
+        
+        # Clean up the temporary OGG file
+        os.remove(temp_ogg_path)
+        
+        # Return the local MP3 file path for Google Cloud Speech-to-Text
+        return temp_mp3_path
+        
+    except Exception as e:
+        logging.error(f"Error in ogg_to_mp3_s3: {str(e)}")
+        # Cleanup any temp files if they exist
+        if os.path.exists(temp_ogg_path):
+            os.remove(temp_ogg_path)
+        if os.path.exists(temp_mp3_path):
+            os.remove(temp_mp3_path)
+        raise
 
 async def generate_reference_code() -> str:
     """Generate unique reference code in format NB-YYYY-MM-DD-XXXX"""
@@ -806,163 +1050,6 @@ async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
         raise e
     
 
-# class AsyncEmailService:
-#     def __init__(
-#         self, 
-#         smtp_server: Optional[str] = None,
-#         smtp_port: Optional[int] = None,
-#         smtp_username: Optional[str] = None,
-#         smtp_password: Optional[str] = None,
-#         from_email: Optional[str] = None,
-#         logger: Optional[Any] = None
-#     ):
-#         """
-#         Initialize async SMTP email service.
-        
-#         Args:
-#             smtp_server (str, optional): SMTP server address
-#             smtp_port (int, optional): SMTP server port
-#             smtp_username (str, optional): SMTP login username
-#             smtp_password (str, optional): SMTP login password
-#             from_email (str, optional): Email address to send from
-#             logger (logging.Logger, optional): Logger instance
-#         """
-#         # Use environment variables if not provided directly
-#         self.smtp_server = smtp_server or os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-#         self.smtp_port = smtp_port or int(os.getenv('SMTP_PORT', 587))
-#         self.smtp_username = smtp_username or os.getenv('SMTP_USERNAME')
-#         self.smtp_password = smtp_password or os.getenv('SMTP_PASSWORD')
-#         self.from_email = from_email or os.getenv('FROM_EMAIL')
-        
-#         # Use provided logger or fallback to a default
-#         self.logger = logger
-
-#         # Validate required configurations
-#         self._validate_config()
-
-#     def _validate_config(self):
-#         """
-#         Validate SMTP configuration parameters.
-#         """
-#         missing_configs = []
-#         if not self.smtp_server:
-#             missing_configs.append("SMTP Server")
-#         if not self.smtp_port:
-#             missing_configs.append("SMTP Port")
-#         if not self.smtp_username:
-#             missing_configs.append("SMTP Username")
-#         if not self.smtp_password:
-#             missing_configs.append("SMTP Password")
-#         if not self.from_email:
-#             missing_configs.append("From Email")
-
-#         if missing_configs:
-#             error_msg = f"Missing SMTP configuration: {', '.join(missing_configs)}"
-#             if self.logger:
-#                 self.logger.error(error_msg)
-#             raise ValueError(error_msg)
-
-#     async def send_bank_statement_email(
-#         self, args: Dict[str, Any]
-#     ) -> Dict[str, Any]:
-#         """
-#         Send bank statement via email to customer.
-        
-#         Args:
-#             args: Dictionary containing:
-#                     customer_email: Request Valid email address from customer, not from profile
-#                     statement_data: Raw statement data after getting account statement
-#                     account_no: Account number for reference
-#         Returns:
-#             Dict: Response from email service or error details
-#         """
-#         try:
-#             # Extract required parameters
-#             customer_email = args.get("customer_email")
-#             statement_data = args.get("statement_data")
-#             account_no = args.get("account_no")
-
-#             # Validate required fields
-#             if not all([customer_email, statement_data, account_no]):
-#                 return ValueError("Missing required parameters: customer_email, statement_data, or account_no")
-
-#             # Validate email format
-#             if not customer_email or '@' not in customer_email:
-#                 return ValueError(f"Invalid email address: {customer_email}")
-
-#             # Log email sending attempt
-#             if self.logger:
-#                 self.logger.info(f"Attempting to send bank statement email to {customer_email}")
-#             account_no = account_no[:3]
-#             # Create email message
-#             msg = MIMEMultipart()
-#             msg["From"] = self.from_email
-#             msg["To"] = customer_email
-#             msg["Subject"] = f"Account Statement - {account_no}XXXXXXXXX"
-
-#             # Create email body
-#             body = f"""
-#             <html>
-#             <body>
-#             <strong>Your Account Statement</strong>
-#             <p>Account: {account_no}XXXXXXXXX</p>
-#             <p>Please find your requested bank statement attached.</p>
-#             </body>
-#             </html>
-#             """
-#             msg.attach(MIMEText(body, "html"))
-
-#             # Create attachment
-#             part = MIMEBase("application", "octet-stream")
-#             part.set_payload(statement_data)
-#             encoders.encode_base64(part)
-            
-#             part.add_header(
-#                 "Content-Disposition", 
-#                 f"attachment; filename=statement_{account_no}.txt"
-#             )
-#             msg.attach(part)
-
-#             # Async SMTP sending
-#             async with aiosmtplib.SMTP(
-#                 hostname=self.smtp_server, 
-#                 port=self.smtp_port,
-#                 start_tls=True
-#             ) as server:
-#                 # Authenticate
-#                 await server.login(self.smtp_username, self.smtp_password)
-                
-#                 # Send email
-#                 await server.send_message(msg)
-
-#             # Log successful email sending
-#             if self.logger:
-#                 success_msg = f"Bank statement email sent successfully to {customer_email} for account {account_no}"
-#                 self.logger.info(success_msg)
-            
-#             return {
-#                 "status": "success", 
-#                 "message": "Email sent successfully",
-#                 "recipient": customer_email,
-#                 "account_no": account_no
-#             }
-            
-#         except Exception as e:
-#             # Log any errors
-#             if self.logger:
-#                 self.logger.error(f"Failed to send bank statement email: {str(e)}")
-#                 self.logger.exception("Email sending error details")
-            
-#             return {
-#                 "status": "error", 
-#                 "message": str(e),
-#                 "recipient": args.get("customer_email")
-#             }
-
-
-
-
-# Install the async SMTP library
 
 def get_fernet_key(hex_key: str) -> bytes:
     hex_bytes = bytes.fromhex(hex_key)
