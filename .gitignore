@@ -17,6 +17,6 @@ __pycache__/
 
 # MacOS specific
 .DS_Store
-
+.json
 # Jupyter Notebooks
 .ipynb_checkpoints/
