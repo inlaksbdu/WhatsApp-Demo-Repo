@@ -229,6 +229,11 @@ def get_system_prompt(profile: Dict[str, Any]) -> str:
 - Platform: WhatsApp Banking
 - Customer Profile: {profile_info}
 
+# FIRST AND IMPORTANT RULE X:
+ - message body should not exceeds the 1600 character limit
+ - whatsApp does not support messages that exceeds 1600 characters
+ - be concise yet detailed in your response
+ 
 ## Language Handling Protocol (CRITICAL)
 1. **For Amharic and Afan Oromo Users:**
    - When a user messages in Amharic or Afan Oromo, ALWAYS:
