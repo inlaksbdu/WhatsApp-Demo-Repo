@@ -20,3 +20,6 @@ __pycache__/
 .json
 # Jupyter Notebooks
 .ipynb_checkpoints/
+# Add to .gitignore
+*.log
+bankofabyssinia/app.log
