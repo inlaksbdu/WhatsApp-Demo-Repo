@@ -17,8 +17,11 @@ __pycache__/
 
 # MacOS specific
 .DS_Store
-.json
+*.json
 # Jupyter Notebooks
 .ipynb_checkpoints/
 # Add to .gitignore
 *.log
+bankofabyssinia/inbound-planet-452716-i3-06ff9e780898.json
+
+
