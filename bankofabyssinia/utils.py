@@ -840,7 +840,7 @@ async def text_to_whatsapp_audio(text: str) -> str:
         logging.info("Converting text to speech with ElevenLabs")
         # Convert text to speech and handle the generator response
         audio_response = elevenlabs_client.text_to_speech.convert(
-            voice_id= "Egx8eNVJsst5B2g4xEqJ", #"pNInz6obpgDQGcFmaJgB",
+            voice_id= "UgBBYS2sOqTuMpoF3BR0", #"pNInz6obpgDQGcFmaJgB",
             output_format="mp3_22050_32",
             text=cleaned_text,
             model_id="eleven_turbo_v2_5",

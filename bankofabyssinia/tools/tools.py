@@ -1659,14 +1659,16 @@ class BankingTools:
         return self._run_async(self.verify_credit_account(__arg1))
     
 
+
     async def send_whatsapp_audio_message(self, __arg1: Dict[str, str]) -> Dict[str, str]:
         """
-        Convert text to audio, and send via WhatsApp
-        
+        respond to user with audio
         Args:
             __arg1: Dictionary containing:
                 phone_number: Recipient's from info
                 text_response: Text to convert to speech
+        Returns: 
+             audio only, don't add any extra text to the tool mesage, the only text should "play audio"...Avoid adding text like 'Please check your WhatsApp'
         """
         try:
             phone_number = __arg1['phone_number']
@@ -1683,10 +1685,11 @@ class BankingTools:
             
             # Initialize Twilio client
             client = Client(
-                TWILIO_ACCOUNT_SID,
-                TWILIO_AUTH_TOKEN
+                os.getenv("TWILIO_ACCOUNT_SID"), 
+                os.getenv("TWILIO_AUTH_TOKEN")
             )
-            
+            logger.info(f"Sending audio to {clean_number}")
+            logger.info(f"The twilio number {TWILIO_NUMBER}")
             # Send WhatsApp message with audio
             message = client.messages.create(
                 media_url=[s3_audio_url],
@@ -1694,7 +1697,7 @@ class BankingTools:
                 to=f"whatsapp:{clean_number}"
             )
             
-            return f"Audio sent successful,this is message sid {message.sid}, tell user to 'play the audio' "
+            return f"audio sent to user"
         
         except Exception as e:
             logging.error(f"Error sending WhatsApp audio message: {str(e)}")
