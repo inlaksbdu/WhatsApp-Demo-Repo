@@ -60,8 +60,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg import Connection
 from psycopg_pool import ConnectionPool
 from loguru import logger
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-assemply_key = os.getenv('ASSEMBLY_AI_API_KEY ')
+
 # logging.basicConfig(
 #     level=logging.INFO,
 #     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -78,6 +77,8 @@ assemply_key = os.getenv('ASSEMBLY_AI_API_KEY ')
 # Connection configuration
 
 load_dotenv()
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+assemply_key = os.getenv('ASSEMBLY_AI_API_KEY ')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 HF_TOKEN = os.getenv('HF_TOKEN')
