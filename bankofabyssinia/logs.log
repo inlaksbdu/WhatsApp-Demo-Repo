@@ -1,0 +1,2 @@
+2025-02-19 10:22:26.908 | INFO     | main:startup_event:782 - Application started, RAG tools initialized
+2025-02-19 10:22:27.112 | INFO     | main:shutdown_event:789 - Application shutdown, resources cleaned up

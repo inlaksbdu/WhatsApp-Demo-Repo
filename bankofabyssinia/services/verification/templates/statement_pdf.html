@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+         body { 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            width: 100%;
+            background-color: #fff;
+            margin: auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #004080;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .logo {
+            margin-right: 20px;
+        }
+        
+        .logo img {
+            max-width: 200px;
+            max-height: 80px;
+            height: auto;
+        }
+
+        /* Center bank name absolutely */
+        .bank-name {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .bank-name h1 {
+            margin: 0;
+            color: #004080;
+            font-size: 32px;
+        }
+
+        .bank-info {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .bank-info p {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #004080;
+            font-size: 24px;
+        }
+
+        .header p {
+            margin: 5px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .customer-details {
+            margin: 20px 0;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .customer-details h3 {
+            margin-top: 0;
+            color: #004080;
+            font-size: 16px;
+        }
+        
+        .customer-details p {
+            margin: 4px 0;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            table-layout: fixed;
+        }
+
+        th, td {
+            padding: 6px;
+            text-align: left;
+            border: 1px solid #ddd;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #f8f8f8;
+        }
+
+        th:nth-child(1) { width: 15%; } /* Date */
+        th:nth-child(2) { width: 35%; } /* Narration */
+        th:nth-child(3) { width: 15%; } /* Reference */
+        th:nth-child(4) { width: 8%; }  /* Debit */
+        th:nth-child(5) { width: 8%; }  /* Credit */
+        th:nth-child(6) { width: 9%; }  /* Balance */
+
+        .amount {
+            text-align: right;
+            font-family: monospace;
+            font-size: 10px;
+        }
+
+        .narration {
+            font-size: 10px;
+        }
+
+        .narration small {
+            font-size: 9px;
+            color: #666;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .ref {
+            font-family: monospace;
+            color: #666;
+            font-size: 9px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        @page {
+            margin: 10mm;
+            size: A4;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            table {
+                table-layout: auto;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: center;
+                position: static;
+            }
+
+            .bank-name {
+                position: static;
+                transform: none;
+                margin-top: 10px;
+            }
+
+            .bank-name h1 {
+                font-size: 24px;
+                text-align: center;
+            }
+
+            .logo img {
+                max-width: 150px;
+                max-height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">
+                    <img src="https://sp-ao.shortpixel.ai/client/to_auto,q_lossless,ret_img,w_222,h_55/https://www.bankofabyssinia.com/wp-content/uploads/2020/09/Asset-1@4x.png" alt="{{ bank_name }} Logo">
+                </div>
+                <div class="bank-name">
+                    <h1>{{ bank_name }}</h1>
+                </div>
+            </div>
+            <div class="bank-info">
+                <p>{{ bank_address }}</p>
+                <table style="width: 100%; max-width: 400px; margin: 10px auto;">
+                    <tr>
+                        <td style="text-align: center; padding: 10px; border: none;">
+                            <a href="tel:+25115183981/8397" style="color: #666; text-decoration: none; font-size: 14px;">
+                                ☎️ +25115183981/8397
+                            </a>
+                        </td>
+                        <td style="text-align: center; padding: 10px; border: none;">
+                            <a href="mailto:contactcenter@bankofabyssinia.com" style="color: #666; text-decoration: none; font-size: 14px;">
+                                ✉️ contactcenter@bankofabyssinia.com
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="customer-details">
+            <h3>Customer Details</h3>
+            <p><strong>Name:</strong> {{ customer_name }}</p>
+            <p><strong>Account Number:</strong> {{ account_number }}</p>
+            <!-- <p><strong>Address:</strong> {{ customer_address }}</p> -->
+        </div>
+
+        <h2>Account Statement</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Narration</th>
+                        <th>Reference</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for txn in statement %}
+                    <tr>
+                        <td>{{ txn.bookingDate }}</td>
+                        <td class="narration">{{ txn.transactionNarration }}<br>
+                            <small>From: {{ txn.debitAccount }} To: {{ txn.creditAccount }}</small>
+                        </td>
+                        <td class="ref">{{ txn.transactionRef }}</td>
+                        <td class="amount">{{ txn.debitAmount }}</td>
+                        <td class="amount">{{ txn.creditAmount }}</td>
+                        <td class="amount">{{ txn.closingBalance }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            Generated on {{ generated_date }}<br>
+            {{ bank_name }}
+        </div>
+    </div>
+</body>
+</html>

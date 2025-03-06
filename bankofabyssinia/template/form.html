@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Signup</title>
+    <style>
+        /* Previous styles remain the same until alert styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #344767;
+        }
+
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        input:not([type="file"]), select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .country-code {
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .phone-number {
+            flex-grow: 1;
+        }
+
+        .file-input {
+            margin-top: 0.5rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #1976d2;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* New Alert Styles */
+        .alert {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .alert.success {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .alert.error {
+            background-color: #fdecea;
+            border: 1px solid #ef5350;
+            color: #c62828;
+        }
+
+        .alert-content {
+            flex-grow: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .alert-message {
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            color: currentColor;
+            padding: 4px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            font-size: 1.25rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .alert.hiding {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customer Signup</h1>
+        </div>
+        <div id="alertContainer"></div>
+        <!-- Rest of the form remains exactly the same -->
+        <form id="signupForm">
+            <!-- Previous form content remains exactly the same -->
+     
+
+            <div class="form-group">
+                <label class="required" for="phone_number">Phone Number</label>
+                <div class="phone-input-group">
+                    <select id="country_code" name="country_code" class="country-code" required>
+                        <option value="+233">+233</option>
+                        <option value="+234">+234</option>
+                        <option value="+254">+254</option>
+                        <option value="+27">+27</option>
+                        <option value="+1">+1</option>
+                        <option value="+44">+44</option>
+                    </select>
+                    <input type="tel" id="phone_number" name="phone_number" class="phone-number" required placeholder="Phone number without country code">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="required" for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
+            </div>
+
+            <div class="form-group">
+                <label for="profile_picture">Profile Picture</label>
+                <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="file-input">
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="id_type">ID Type</label>
+                <input type="number" id="id_type" name="id_type" required min="1">
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="id_number">ID Number</label>
+                <input type="text" id="id_number" name="id_number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="front_id_image">Front ID Image</label>
+                <input type="file" id="front_id_image" name="front_id_image" accept="image/*" class="file-input">
+            </div>
+
+            <div class="form-group">
+                <label for="back_id_image">Back ID Image</label>
+                <input type="file" id="back_id_image" name="back_id_image" accept="image/*" class="file-input">
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label class="required" for="secure_pin">Secure PIN</label>
+                <input type="password" id="secure_pin" name="secure_pin" required pattern="[0-9]{4}">
+            </div>
+
+            <div class="form-group">
+                <label for="registration_token">Registration Token</label>
+                <input type="text" id="registration_token" name="registration_token">
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        // Updated Alert System
+        function showAlert(type, title, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            // Clear any existing alerts
+            alertContainer.innerHTML = '';
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerHTML = `
+                <div class="alert-content">
+                    <div class="alert-title">${title}</div>
+                    <div class="alert-message">${message}</div>
+                </div>
+                <button class="alert-close" aria-label="Close">✕</button>
+            `;
+
+            // Add close button functionality
+            const closeButton = alert.querySelector('.alert-close');
+            closeButton.addEventListener('click', () => {
+                alert.classList.add('hiding');
+                setTimeout(() => {
+                    if (alert.parentElement) {
+                        alertContainer.removeChild(alert);
+                    }
+                }, 300);
+            });
+
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.classList.add('hiding');
+                    setTimeout(() => {
+                        if (alert.parentElement) {
+                            alertContainer.removeChild(alert);
+                        }
+                    }, 300);
+                }
+            }, 5000);
+
+            alertContainer.appendChild(alert);
+        }
+
+
+        const formatPhoneNumber = (countryCode, phoneNumber) => {
+            const cleanNumber = phoneNumber.replace(/\D/g, '');
+            return `${countryCode}${cleanNumber}`;
+        };
+
+        const fileToFormData = (form, formData) => {
+            if (form.profile_picture.files[0]) {
+                formData.append('profile_picture', form.profile_picture.files[0]);
+            }
+            
+            if (form.front_id_image.files[0]) {
+                formData.append('front_id_image', form.front_id_image.files[0]);
+            }
+            
+            if (form.back_id_image.files[0]) {
+                formData.append('back_id_image', form.back_id_image.files[0]);
+            }
+        };
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            form.classList.add('loading');
+            
+            try {
+                const formData = new FormData(form);
+
+                const formattedPhone = formatPhoneNumber(
+                    form.country_code.value,
+                    form.phone_number.value
+                );
+                
+                formData.append('phone_number', formattedPhone);
+                formData.append('first_name', form.first_name.value);
+                formData.append('last_name', form.last_name.value);
+                formData.append('dob', form.dob.value);
+                formData.append('id_type', parseInt(form.id_type.value));
+                formData.append('id_number', form.id_number.value);
+                formData.append('password', form.password.value);
+                formData.append('secure_pin', form.secure_pin.value);
+    
+                fileToFormData(form, formData);
+    
+                const response = await fetch('https://retailbanking.bdudcloud.com/auth/new-customer-signup/', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+    
+                const data = await response.json();
+                showAlert('success', 'Success!', 'Your account has been successfully created. Welcome aboard!');
+                form.reset();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', 'Error', 'Something went wrong during signup. Please try again or contact support if the problem persists.');
+            } finally {
+                form.classList.remove('loading');
+            }
+        });
+    </script>
+</body>
+</html>
