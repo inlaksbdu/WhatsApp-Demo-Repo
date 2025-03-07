@@ -810,6 +810,37 @@ class BankingTools:
         return self._run_async(self.get_complaints_by_email(__arg1))
     
     
+    # async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
+    #     """
+    #     Generate a secure link with customer number and mobile number
+    #     Args:
+    #         __arg1: Dictionary containing:
+    #             customer_number: 5-digit customer number from profile
+    #             mobile_number: customer 12 digit mobile number (e.g 233558158591)
+    #     """
+    #     try:
+    #         customer_number = __arg1["customer_number"]
+    #         mobile_number = __arg1["mobile_number"]
+            
+    #         # Create and encrypt token
+    #         token = self.serializer.dumps({
+    #             'customer_number': __arg1["customer_number"],
+    #             'mobile_number': __arg1["mobile_number"]
+    #         })
+                        
+    #         # Log the generated token and data
+    #         logger.info(f"Generated token: {token}")
+    #         logger.info(f"Token data: {__arg1}")
+            
+    #         # Create the verification link
+    #         verification_link = f"{BACKEND_URL}/verify-pin?token={token}"
+            
+    #         logger.info(f"Secure link generated for customer {customer_number} and mobile {mobile_number}")
+    #         return verification_link
+            
+    #     except Exception as e:
+    #         logger.error(f"Error generating secure link for customer {customer_number}: {str(e)}")
+    #         raise e
     async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
         """
         Generate a secure link with customer number and mobile number
@@ -817,15 +848,35 @@ class BankingTools:
             __arg1: Dictionary containing:
                 customer_number: 5-digit customer number from profile
                 mobile_number: customer 12 digit mobile number (e.g 233558158591)
+        Returns:
+            Either a verification link string or a dictionary with error information
         """
         try:
+            # Check if __arg1 is a string, parse it as JSON if it is
+            if isinstance(__arg1, str):
+                import json
+                try:
+                    __arg1 = json.loads(__arg1)
+                except json.JSONDecodeError as json_err:
+                    logger.error(f"Invalid JSON format: {str(json_err)}")
+                    return {"error": True, "message": f"Invalid JSON format: {str(json_err)}", "data": __arg1}
+                
+            # Validate required fields
+            if "customer_number" not in __arg1:
+                logger.error("Missing required field: customer_number")
+                return {"error": True, "message": "Missing required field: customer_number", "data": __arg1}
+                
+            if "mobile_number" not in __arg1:
+                logger.error("Missing required field: mobile_number")
+                return {"error": True, "message": "Missing required field: mobile_number", "data": __arg1}
+            
             customer_number = __arg1["customer_number"]
             mobile_number = __arg1["mobile_number"]
             
             # Create and encrypt token
             token = self.serializer.dumps({
-                'customer_number': __arg1["customer_number"],
-                'mobile_number': __arg1["mobile_number"]
+                'customer_number': customer_number,
+                'mobile_number': mobile_number
             })
                         
             # Log the generated token and data
@@ -839,8 +890,19 @@ class BankingTools:
             return verification_link
             
         except Exception as e:
-            logger.error(f"Error generating secure link for customer {customer_number}: {str(e)}")
-            raise e
+            # Create a detailed error response instead of raising the exception
+            error_message = str(e)
+            error_type = type(e).__name__
+            
+            logger.error(f"Error generating secure link: {error_type} - {error_message}")
+            
+        # Return a structured error response the agent can understand and handle
+        return {
+            "error": True,
+            "message": f"Failed to generate secure link: {error_message}",
+            "error_type": error_type,
+            "data": __arg1
+        }
 
     def generate_secure_link_sync(self, __arg1: Dict[str, str]) -> List[Dict]:
         """Synchronous wrapper for get_account_statement"""
