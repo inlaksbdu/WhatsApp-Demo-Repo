@@ -346,11 +346,11 @@ async def setup_tools():
     rag_tool = create_retriever_tool(
         retriever,
         "info_rag",
-        "Use this tool to answer user questions about GTI"
+        "Use this tool to answer user questions about BOA, Always summarize the information retrieved",
     )
     
     def tavily_search(query: str) -> str:
-        """Use this to search for google map location and information on Akiba Bank"""
+        """Use this to search for google map location and information on BOA"""
         search = TavilySearchResults(
             max_results=5,
             search_depth='advanced'
@@ -363,7 +363,7 @@ async def setup_tools():
     
     search_tool = Tool(
         name="live_search",
-        description="Use this to search for google map location and information on Akiba Bank",
+        description="Use this to search for google map location and information on BOA",
         func=tavily_search,
         args_schema=None
     )
