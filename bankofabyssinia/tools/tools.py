@@ -859,7 +859,7 @@ class BankingTools:
                     __arg1 = json.loads(__arg1)
                 except json.JSONDecodeError as json_err:
                     logger.error(f"Invalid JSON format: {str(json_err)}")
-                    return {"error": True, "message": f"Invalid JSON format: {str(json_err)}", "data": __arg1}
+                    return {"error": True, "message": f"Invalid JSON format try passing it as dict: {str(json_err)}", "data": __arg1}
                 
             # Validate required fields
             if "customer_number" not in __arg1:
