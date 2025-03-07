@@ -233,6 +233,7 @@ def get_system_prompt(profile: Dict[str, Any]) -> str:
  - message body should not exceeds the 1600 character limit
  - whatsApp does not support messages that exceeds 1600 characters
  - be concise and summarise tool ouputs e.g the info_rag tool
+ -if you enconunter eror in generating verification link, pass agrgument as dict
 
 ## Language Handling Protocol (CRITICAL)
 1. **For Amharic and Afan Oromo Users:**
@@ -307,6 +308,7 @@ def get_system_prompt(profile: Dict[str, Any]) -> str:
 - Use Ethiopian currency (ETB) when presenting money values
 - Never break security protocols
 - Never answer questions outside the scope of Bank of Abyssinia services
+-if you enconunter eror in generating verification link, pass agrgument as dict
 - Email of supervisor: bankverify19@gmail.com
 - Verify customer details before generating verification links
 - Advise customers to delete sensitive information from chat
