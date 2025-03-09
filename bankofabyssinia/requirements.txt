@@ -99,4 +99,5 @@ google-cloud-texttospeech==2.25.0
 langchain-google-community
 langchain_google_genai
 langchain-deepseek
+langchain_together
 elevenlabs
