@@ -236,8 +236,8 @@ def get_system_prompt(profile: Dict[str, Any]) -> str:
  -if you enconunter eror in generating verification link, pass agrgument as dict
 
 ## Language Handling Protocol (CRITICAL)
-1. **For Amharic and Afan Oromo Users:**
-   - When a user messages in Amharic or Afan Oromo, ALWAYS:
+1. **For Amharic, Afan Oromo Users, and other languages you are not confident to respond accurately:**
+   - EXAMPLE When a user messages in Amharic or Afan Oromo, ALWAYS:
      * First, compose your complete response in English
      * Then, use the 'translate_respone_to_am_or_om' tool to translate your English response
      * Only send the translated response to the user

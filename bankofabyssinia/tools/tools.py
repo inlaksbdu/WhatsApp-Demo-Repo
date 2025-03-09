@@ -30,8 +30,11 @@ from models.database import Complaint
 from cryptography.fernet import Fernet
 from sqlalchemy.orm import Session
 from models.database import OTPManagement
+from langchain_deepseek import ChatDeepSeek
+from langchain_google_genai import ChatGoogleGenerativeAI
 import random
 import string
+from langchain_together  import ChatTogether
 from datetime import datetime, timedelta
 from loguru import logger
 from textblob import TextBlob
@@ -50,6 +53,12 @@ BACKEND_URL = os.getenv('BACKEND_URL')
 VERIFY_URL = os.getenv('VERIFY_URL')
 TWILIO_NUM = os.getenv('TWILIO_NUM')
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
+TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY')
+os.environ['TOGETHER_API_KEY']=TOGETHER_API_KEY
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+os.environ['DEEPSEEK_API_KEY']= DEEPSEEK_API_KEY
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+os.environ['GEMINI_API_KEY'] = GEMINI_API_KEY
 
 class GetStatementInputSchema(BaseModel):
     accountNo: str = Field(..., description="Account number")
@@ -323,7 +332,7 @@ class BankingTools:
                 creditAccountId: Recipient account number
                 debitAccountId: Sender account number
                 debitAmount: Amount to transfer in ETB
-                paymentDetails: Purpose of transfer
+                paymentDetails: Purpose of transfer in English
                 customer_name: Name of the customer from profile
                 Mobile Number: -> customer mobile number with "+" and country code from customer profile
         Returns:
@@ -841,6 +850,7 @@ class BankingTools:
     #     except Exception as e:
     #         logger.error(f"Error generating secure link for customer {customer_number}: {str(e)}")
     #         raise e
+
     async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
         """
         Generate a secure link with customer number and mobile number
@@ -903,7 +913,7 @@ class BankingTools:
             "error_type": error_type,
             "data": __arg1
         }
-
+    
     def generate_secure_link_sync(self, __arg1: Dict[str, str]) -> List[Dict]:
         """Synchronous wrapper for get_account_statement"""
         return self._run_async(self.generate_secure_link(__arg1))    
@@ -1721,7 +1731,6 @@ class BankingTools:
         return self._run_async(self.verify_credit_account(__arg1))
     
 
-
     async def send_whatsapp_audio_message(self, __arg1: Dict[str, str]) -> Dict[str, str]:
         """
         respond to user with audio
@@ -1796,6 +1805,33 @@ class BankingTools:
     #         logger.error(f"Translation failed: {str(e)}")
     #         return f"Translation error: {str(e)}"
 
+    # async def translate_respone_to_am_om(self, __arg1: Dict[str, str]) -> Dict[str, str]:
+    #     """
+    #     Am tool to help you translate your english response to amharic and afan Oromo.
+
+    #     Args:
+    #         __arg1: Dictionary containing:
+    #             english_response: The text to be translated
+    #             target_language: The language code to translate to (e.g., 'am' for amharic, 'om' for afan oromo)
+
+    #     Returns:
+    #         Optional[str]: Translated text, or None if translation fails
+    #     """
+    #     try:
+    #         target_language = __arg1['target_language']
+    #         text = __arg1['english_response']
+    #         # Create translator instance
+    #         translator = Translator()
+    #         logger.info(f"Translating text to {target_language}")
+    #         # Translate the text
+    #         translation = await translator.translate(text, dest=target_language)
+
+    #         return translation.text
+    #     except Exception as e:
+    #         logging.error(f"Translation error: {str(e)}")
+    #         return None
+        
+
     async def translate_respone_to_am_om(self, __arg1: Dict[str, str]) -> Dict[str, str]:
         """
         Am tool to help you translate your english response to amharic and afan Oromo.
@@ -1803,21 +1839,42 @@ class BankingTools:
         Args:
             __arg1: Dictionary containing:
                 english_response: The text to be translated
-                target_language: The language code to translate to (e.g., 'am' for amharic, 'om' for afan oromo)
+                target_language: The language to translate to (e.g., 'amharic' or 'afan oromo')
 
         Returns:
             Optional[str]: Translated text, or None if translation fails
         """
         try:
+            
             target_language = __arg1['target_language']
             text = __arg1['english_response']
+            logger.info(f"translatin to {target_language}")
             # Create translator instance
-            translator = Translator()
-            logger.info(f"Translating text to {target_language}")
-            # Translate the text
-            translation = await translator.translate(text, dest=target_language)
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"""You are an expert translator specializing translating from the given text to {target_language} .
 
-            return translation.text
+            Your task is to translate text from English to the target language in a way that:
+            1. Preserves the original meaning and context
+            2. Sounds natural and conversational to native speakers
+
+            JUST TRANSLATE!"""
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ]
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=0.2,
+                max_retries=2,
+                # other params...
+            )
+            ai_msg = llm.invoke(messages)
+            translation = ai_msg.content
+            return translation
 
         except Exception as e:
             logging.error(f"Translation error: {str(e)}")
