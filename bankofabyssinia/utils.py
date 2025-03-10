@@ -346,13 +346,13 @@ class AsyncEmailService:
     #         error_msg = f"Failed to send bank statement email: {str(e)}"
     #         self.logger.error(error_msg)
     #         raise HTTPException(status_code=500, detail=error_msg)
-    async def send_bank_statement_email(self, __arg1: Dict[str, Any]):
+    async def send_bank_statement_email(self, customer_email:str, account_no:str, customer_name:str, credit_account_id:str, transactions:dict):
         try:
             # Extract data
-            customer_email = __arg1.get("customer_email")
-            transactions = __arg1.get("transactions")
-            account_no = __arg1.get("account_no")
-            customer_name = __arg1.get("customer_name", "Valued Customer")
+            # customer_email = __arg1.get("customer_email")
+            # transactions = __arg1.get("transactions")
+            # account_no = __arg1.get("account_no")
+            # customer_name = __arg1.get("customer_name", "Valued Customer")
             
 
 
@@ -362,7 +362,7 @@ class AsyncEmailService:
                     'bookingDate': tx.get('date', 'N/A'),
                     'transactionNarration': tx.get('type', 'Transaction'),
                     'debitAccount': account_no,
-                    'creditAccount': __arg1.get("credit_account_id", "None"),
+                    'creditAccount': credit_account_id,
                     'transactionRef': f"REF{tx_id[-4:]}" if tx_id[-4:].isdigit() else f"REF{tx.get('date', '')[-4:]}",
                     'debitAmount': tx.get('debit', '0.00'),
                     'creditAmount': tx.get('credit', '0.00'),
@@ -542,13 +542,17 @@ class AsyncEmailService:
     #         }
         
     async def send_escalation_email(
-        self, __arg1: Dict[str, Any]
+        self,escalating_to: str,
+        customer_email: str,
+        customer_name: str,
+        mobile_number: str,
+        conversation_summary: str,
+        customer_mood: str
     ) -> Dict[str, Any]:
         """
         Send a professional escalation email to bank supervisors.
         
         Args:
-            __arg1 (Dict[str, Any]): Escalation email parameters
                 - escalating_to (str): Email of supervisor/department
                 - customer_email (str): Customer's email
                 - mobile_number (str): Customer's mobile number
@@ -561,12 +565,12 @@ class AsyncEmailService:
         """
         try:
             # Validate and extract required parameters
-            escalating_to = __arg1.get('escalating_to')
-            customer_email = __arg1.get('customer_email')
-            customer_name = __arg1.get('customer_name')
-            conversation_summary = __arg1.get('conversation_summary')
-            customer_mood = __arg1.get('customer_mood', 'Not specified')
-            customer_mobile = __arg1.get('mobile_number', 'Not specified')
+            escalating_to = escalating_to
+            customer_email = customer_email
+            customer_name = customer_name
+            conversation_summary = conversation_summary
+            customer_mood = customer_mood
+            customer_mobile = mobile_number
 
             # # Email validation with more robust check
             # if not all('@' in email for email in [escalating_to, customer_email]):
@@ -643,7 +647,7 @@ class AsyncEmailService:
             return {
                 "status": "error", 
                 "message": error_msg,
-                "escalated_to": __arg1.get('escalating_to')
+                "escalated_to": escalating_to
             }
 async def ogg_to_mp3_s3_local_file(audio_path: str) -> str:
     """
@@ -840,7 +844,7 @@ async def text_to_whatsapp_audio(text: str) -> str:
         logging.info("Converting text to speech with ElevenLabs")
         # Convert text to speech and handle the generator response
         audio_response = elevenlabs_client.text_to_speech.convert(
-            voice_id= "UgBBYS2sOqTuMpoF3BR0", #"pNInz6obpgDQGcFmaJgB",
+            voice_id= "Egx8eNVJsst5B2g4xEqJ", #"pNInz6obpgDQGcFmaJgB",
             output_format="mp3_22050_32",
             text=cleaned_text,
             model_id="eleven_turbo_v2_5",
