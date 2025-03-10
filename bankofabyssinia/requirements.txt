@@ -101,3 +101,4 @@ langchain_google_genai
 langchain-deepseek
 langchain_together
 elevenlabs
+pydantic[email]

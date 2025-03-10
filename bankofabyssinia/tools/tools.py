@@ -1,3 +1,4 @@
+import json
 import random
 import secrets
 import ssl
@@ -13,7 +14,7 @@ from services.profile_service import ProfileService
 from services.memory_service import MemoryService
 from typing import Coroutine, Optional, Dict, Any, List, Union, Tuple
 import aiohttp
-from pydantic import Field, BaseModel
+from pydantic import EmailStr, Field, BaseModel, validator
 from datetime import datetime, timedelta
 from langchain_core.tools import Tool
 import asyncio
@@ -65,6 +66,114 @@ class GetStatementInputSchema(BaseModel):
     startDate: str = Field(..., description="Start date in the format YYYYMMDD")
     endDate: str = Field(..., description="End date in the format YYYYMMDD")
     customer_number: str = Field(..., description= "customer 3 digit number")
+
+class GetStatementInputSchema(BaseModel):
+    accountNo: str = Field(..., description="Account number")
+    startDate: str = Field(..., description="Start date in the format YYYYMMDD")
+    endDate: str = Field(..., description="End date in the format YYYYMMDD")
+    customer_number: str = Field(..., description= "customer 3 digit number")
+
+class TranslationInput(BaseModel):
+    english_response: str = Field(..., description="The text to be translated")
+    target_language: str = Field(..., description="The language code to translate to (e.g., 'am' for amharic, 'om' for afan oromo)")
+
+class TransferInput(BaseModel):
+    customer_number: str = Field(..., description="Customer 5-digit number from customer info")
+    creditAccountId: str = Field(..., description="Recipient account number")
+    debitAccountId: str = Field(..., description="Sender account number")
+    debitAmount: str = Field(..., description="Amount to transfer in ETB")
+    paymentDetails: str = Field(..., description="Purpose of transfer in English")
+    customer_name: str = Field(..., description="Name of the customer from profile")
+    Mobile_Number: str = Field(..., description="Customer mobile number with '+' and country code from customer profile")
+
+class AccountBalanceInput(BaseModel):
+    customer_number: str = Field(..., description="Correct customer number from profile info")
+
+class ComplaintInput(BaseModel):
+    name: str = Field(..., description="Name of the user creating the complaint")
+    email: str = Field(..., description="Email address of the user creating the complaint")
+    complaint_type: str = Field(..., description="Type of complaint")
+    description: str = Field(..., description="Description of the complaint")
+    Mobile_Number: str = Field(..., description="Customer mobile number with '+' and country code from customer profile")
+
+class UpdateComplaintInput(BaseModel):
+    email: str = Field(..., description="Email address of the user used to create the complaint")
+    update_data: Dict[str, Any] = Field(..., description="Dictionary containing fields to update")
+
+class GetComplaintsInput(BaseModel):
+    email: str = Field(..., description="Email address of the user used to create the complaint")
+
+class BankBookingInput(BaseModel):
+    customer_name: str = Field(..., description="Name of the customer")
+    email: str = Field(..., description="Email address of the customer")
+    service_type: str = Field(..., description="Type of service (Account/Loan/Card/Transfer/Investment)")
+    service_details: Dict[str, Any] = Field(..., description="JSON object containing service-specific details")
+    Mobile_Number: str = Field(..., description="Customer mobile number with '+' and country code from customer profile")
+    preferred_date: Optional[str] = Field(None, description="Optional preferred date for processing")
+    @validator("service_details", pre=True)
+    def parse_service_details(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+    
+class GetBankBookingInput(BaseModel):
+    reference_code: str = Field(..., description="reference code generated for customer after bank booking")
+   
+
+class SecureLinkInput(BaseModel):
+    customer_number: str = Field(..., description="5-digit string customer number from profile")
+    mobile_number: str = Field(..., description="Customer 12 digit mobile number (e.g 233558158591)")
+
+class AccountStatementInput(BaseModel):
+    customer_number: str = Field(..., description="Customer 5 digit identification number")
+    customer_name: str = Field(..., description="Customer name from profile info")
+    accountNo: str = Field(..., description="Account number")
+    startDate: str = Field(..., description="Start date (format: YYYYMMDD)")
+    endDate: str = Field(..., description="End date (format: YYYYMMDD)")
+    Mobile_Number: str = Field(..., description="Customer mobile number with '+' and country code from customer profile")
+
+class AppointmentInput(BaseModel):
+    customer_name: str = Field(..., description="Name of the customer")
+    email: str = Field(..., description="Email address of the customer")
+    phone_number: str = Field(..., description="Phone number with country code")
+    appointment_type: str = Field(..., description="Type of appointment (faccount_opening, loan_consultation, investment_advisory, general_inquiry, complaint_resolution)")
+    preferred_date: str = Field(..., description="Preferred date (YYYY-MM-DD)")
+    preferred_time: str = Field(..., description="Preferred time (HH:MM)")
+    location: str = Field(..., description="Location for the appointment")
+    additional_notes: Optional[str] = Field(None, description="Optional additional notes")
+    Mobile_Number: str = Field(..., description="Customer mobile number with '+' and country code from customer profile")
+
+class GetAppointmentInput(BaseModel):
+    reference_code: str = Field(..., description="Reference code of the booking")
+
+class GenerateOtpInput(BaseModel):
+    mobile_number: str = Field(..., description="Customer's mobile number with country code (e.g., +233559158793)")
+
+class GenerateCreateAccountInput(BaseModel):
+    otp_code: str = Field(..., description="otp code sent to user")
+    identifier: str = Field(..., description="identifier generated when generating otp code")
+
+class SendAudioInput(BaseModel):
+    text_response: str = Field(..., description="Text to convert to speech")
+    phone_number: str = Field(..., description="recepient's phone number from info")
+
+class VerifyCreditAccount(BaseModel):
+    credit_account_number: str = Field(..., description="credit account provided by the user")
+   
+class BankStatementInput(BaseModel):
+    customer_email: EmailStr = Field(..., description="Valid email address of the customer")
+    account_no: str = Field(..., description="Account number for reference")
+    customer_name: str = Field(..., description="Customer's full name from customer info")
+    credit_account_id: str = Field(..., description="Recipient account number")
+    transactions: Dict[str, Dict[str, str]] = Field(..., description="Dictionary of transactions with date, type, debit, credit, and balance")
+
+class EscalationEmailInput(BaseModel):
+    escalating_to: EmailStr = Field(..., description="Email of the supervisor/department to escalate to")
+    customer_email: EmailStr = Field(..., description="Customer's email")
+    customer_name: str = Field(..., description="Customer's full name")
+    mobile_number: str = Field(..., description="Customer mobile number with '+' and country code")
+    conversation_summary: str = Field(..., description="Detailed issue description")
+    customer_mood: str = Field(..., description="Customer's emotional state")
 
 
 class BankingAPIClient:
@@ -152,111 +261,6 @@ class BankingTools:
         }
 
     # @async_tool
-    async def create_customer_and_account(self, customer_data: Dict[str, Any]) -> str:
-        """
-        Create a new customer and bank account.
-        Args:
-            Dictionary containing:
-            - firstName: Customer's first name
-            - surName: Customer's surname
-            - dateofBirth: Format YYYYMMDD
-            - mobileNumber: Phone with country code (13 charactors total- WhatsApp Number)
-            - mobileNumber2: Phone with country code((13 charactors total- repeat the first number if you don't have)
-            - customerEmail: Email address (valid email e.g: ...@gmail.com or @yahoo.com)
-        Optional:
-            - otherName: Middle name
-        Returns:
-            Success message with customer and account IDs
-        """
-        try:
-            # Validate required fields
-            required_fields = ['firstName', 'surName', 'dateofBirth', 'mobileNumber','mobileNumber2', 'customerEmail']
-            missing_fields = [field for field in required_fields if field not in customer_data]
-            if missing_fields:
-                raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
-
-            names = self._format_names(
-                customer_data['firstName'],
-                customer_data['surName'],
-                customer_data.get('otherName', '')
-            )
-
-            mnemonic = self._generate_mnemonic(
-                customer_data['firstName'],
-                customer_data['surName'],
-                customer_data['dateofBirth']
-            )
-            mobile_number = customer_data['mobileNumber'].replace('+', '')
-            mobile_number2 = customer_data['mobileNumber2'].replace('+', '')
-
-            client = await self.get_client()
-            async with client as session:
-                # Create customer
-                customer_response = await session.make_api_request(
-                    "createNewCustomer", 
-                    method="POST",
-                    json_data={
-                        "body": {
-                            **customer_data,
-                            **names,
-                            "mnemonic": mnemonic,
-                            "accountOfficer": "2",
-                            "sector": "1000",
-                            "industry": "1200",
-                            "target": "10",
-                            "customerStatus": "12",
-                            "nationality": "ST",
-                            "residence": "ST",
-                            "dateofIncorp": "",
-                            "language": "1",
-                            "mobileNumber": mobile_number,
-                            "mobileNumber2": mobile_number2,
-                            "resident": "Y",
-                            "street": "SAO TOME",
-                            "extensions": {}
-                        }
-                    }
-                )
-                logger.info(f"customer data from api {customer_response}")
-                customer_id = customer_response["header"]["id"]
-                # account_id = f"{customer_id}20" # Category 6220
-                
-                # Create account
-                account_response = await session.make_api_request(
-                    f"createGtiAccount",
-                    method="POST",
-                    json_data={
-                        "body": {
-                            "customerNo": customer_id,
-                            "category": "1010",
-                            "currency": "STN",
-                            "accountName1": names["fullName"],
-                            "accountShortName": names["shortName"],
-                            "accountOfficer": "2",
-                            "openingDate": "",
-                            "channel": "",
-                            "postingRestrict": "",
-                            "extensions": {}
-                        }
-                    }
-                )
-                logger.info(f"account data from api {account_response}")
-                # Re-fetch profile to initialize memory with new customer data
-        # Clean phone number same way as profile service
-                phone_number = profile_service._clean_phone_number(customer_data["mobileNumber"])
-                # Clear cache with clean number
-                async with profile_service._cache_lock:
-                    if phone_number in profile_service._profile_cache:
-                        del profile_service._profile_cache[phone_number]
-
-
-                profile = await profile_service.fetch_customer_profile(mobile_number)
-                await memory_service.initialize_memory(profile)
-                return f"Customer and account created successfully. Account number: {account_response['header']['id']}"
-
-        except Exception as e:
-            logger.error(f"Account creation failed: {str(e)}")
-            raise  
 
     def _run_async(self, coro: Coroutine):     
         """Helper to run coroutines in sync context"""
@@ -267,74 +271,20 @@ class BankingTools:
             asyncio.set_event_loop(loop)
         return loop.run_until_complete(coro)
 
-    def create_customer_and_account_sync(self, customer_data: Dict[str, Any]) -> str:
-        """Synchronous wrapper for create_customer_account"""
-        return self._run_async(self.create_customer_and_account(customer_data))
-    
-    async def create_account_only(self, customer_data: Dict[str, Any]) -> str: 
-        """
-        Create a another bank account for user with existing customerNumber from profile info. Request for account fullName and shortName from user
-        Args:
-            Dictionary containing:
-            - customerNumber: Customer Number from info
-            - fullName: Customer's fullname from from user
-            - shortName: Customer short name from user
-
-        """ 
-        customer_id = customer_data['customerNumber']                  
-        client = await self.get_client()
-        async with client as session:
-            account_response = await session.make_api_request(
-                f"createGtiAccount",
-                method="POST",
-                json_data={
-                    "body": {
-                        "customerNo": customer_id,
-                        "category": "1010",
-                        "currency": "STN",
-                        "accountName1": customer_data["fullName"],
-                        "accountShortName": customer_data["shortName"],
-                        "accountOfficer": "2",
-                        "openingDate": "",
-                        "channel": "",
-                        "postingRestrict": "",
-                        "extensions": {}
-                    }
-                }
-            )
-            logger.info(f"account data from api {account_response}")
-            return f"Customer and account created successfully. Account number: {account_response['header']['id']}"
-        
-
-    def _run_async(self, coro):
-        """Helper to run coroutines in sync context"""
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        return loop.run_until_complete(coro)
-
-    def create_account_only_sync(self, customer_data: Dict[str, Any]) -> str:
-        """Synchronous wrapper for create_customer_account"""
-        return self._run_async(self.create_account_only(customer_data))
-    
-
-            
+     
 
     # @async_tool
-    async def make_transfer(self, transfer_data: Dict[str, Any]) -> str:
+    async def make_transfer(self, customer_number: str, creditAccountId:str,debitAccountId:str, debitAmount:str, paymentDetails:str, customer_name:str, Mobile_Number:str) -> str:
         """
         Make fund transfers between accounts.
         Args:
-            Dictionary containing:
                 customer_number: customer 5-digit number from customer info
                 creditAccountId: Recipient account number
                 debitAccountId: Sender account number
                 debitAmount: Amount to transfer in ETB
                 paymentDetails: Purpose of transfer in English
                 customer_name: Name of the customer from profile
-                Mobile Number: -> customer mobile number with "+" and country code from customer profile
+                Mobile_Number: -> customer mobile number with "+" and country code from customer profile
         Returns:
             Transfer status message
         """
@@ -342,7 +292,7 @@ class BankingTools:
             # 1. Get encrypted PIN from database
             db = next(self.db_session())
             pin_record = db.query(PinManagement).filter(
-                PinManagement.customer_number == transfer_data['customer_number']
+                PinManagement.customer_number == customer_number
             ).first()
             
             if not pin_record:
@@ -359,7 +309,7 @@ class BankingTools:
                 verify_response = await session.post(
                     f"{VERIFY_URL}",
                     json={
-                        "customer_number": transfer_data['customer_number'],
+                        "customer_number": customer_number,
                         "secure_pin": decrypted_pin
                     }
                 )
@@ -386,15 +336,15 @@ class BankingTools:
                                 method="POST",
                                 json_data={
                                     "body": {
-                                        "creditAccountId": transfer_data['creditAccountId'],
-                                        "debitAccountId": transfer_data['debitAccountId'],
-                                        "debitAmount": transfer_data['debitAmount'],
+                                        "creditAccountId": creditAccountId,
+                                        "debitAccountId": debitAccountId,
+                                        "debitAmount": debitAmount,
                                         "debitCurrency": "USD",
                                         "transactionType": "AC",
                                         "debitValueDate": "",
                                         "creditCurrencyId": "USD",
                                         "creditAmount": "",
-                                        "paymentDetails": transfer_data['paymentDetails'],
+                                        "paymentDetails": paymentDetails,
                                         "channel": "",
                                         "eternalRef": "",
                                         "override": "",
@@ -449,11 +399,11 @@ class BankingTools:
                         # await memory_service.initialize_memory(profile)
                         db.delete(pin_record)
                         db.commit()
-                        logger.info(f"Deleted PIN record for customer_number {transfer_data['customer_number']}")
+                        logger.info(f"Deleted PIN record for customer_number {customer_number}")
                         currency = 'ETB'
                         # Save transfer details to the Transfer table
                         try:
-                            phone_number = transfer_data['Mobile Number']
+                            phone_number = Mobile_Number
                             if "+" in phone_number:
                                 clean_number = phone_number
                                 logger.info("Plus sign is present")
@@ -468,11 +418,11 @@ class BankingTools:
                                 .first()
 
                             transfer_record = Transfer(
-                                customer_name=transfer_data.get('customer_name', 'Unknown'),
-                                amount=float(transfer_data['debitAmount']),
-                                credit_account_id=transfer_data['creditAccountId'],
-                                debit_account_id=transfer_data['debitAccountId'],
-                                payment_details=transfer_data['paymentDetails'],
+                                customer_name=customer_name,
+                                amount=float(debitAmount),
+                                credit_account_id=creditAccountId,
+                                debit_account_id= debitAccountId,
+                                payment_details=paymentDetails,
                                 date=datetime.utcnow(),
                                 conversation_id=latest_conversation.id if latest_conversation else None
                             )
@@ -498,50 +448,10 @@ class BankingTools:
         return loop.run_until_complete(coro)
     
 
-    def make_transfer_sync(self, transfer_data: Dict[str, Any]) -> str:
+    def make_transfer_sync(self, customer_number: str, creditAccountId:str,debitAccountId:str, debitAmount:str, paymentDetails:str, customer_name:str, Mobile_Number:str) -> str:
         """Synchronous wrapper for create_customer_account"""
-        return self._run_async(self.make_transfer(transfer_data))
+        return self._run_async(self.make_transfer(customer_number, creditAccountId,debitAccountId, debitAmount, paymentDetails, customer_name, Mobile_Number))
     
-
-
-    # async def get_account_statement(self, accountNo: str, startDate: str, endDate: str) -> str:
-
-    #     """
-    #     Get account statement for given date range.
-    #     Args:
-    #         accountNo: Account number
-    #         startDate: Start date (format: YYYYMMDD)
-    #         endDate: End date (format: YYYYMMDD)
-    #     Returns:
-    #         str: Account statement details
-    #     """
-    #     try:
-    #         start_date = datetime.strptime(startDate, '%Y%m%d')
-    #         end_date = datetime.strptime(endDate, '%Y%m%d')
-    #         if end_date < start_date:
-    #             raise ValueError("End date cannot be earlier than start date")
-    #     except ValueError as e:
-    #         raise ValueError(f"Invalid date format. Use YYYYMMDD format. Error: {str(e)}")
-
-    #     client = await self.get_client()
-    #     async with client as session:
-    #         response = await session.make_api_request("getAccountStatement", 
-    #         params={"accountNo": accountNo, "startDate": startDate, "endDate": endDate})
-    #         return f"Statement: {response}"
-
-    # def _run_async(self, coro):
-    #     """Helper to run coroutines in sync context"""
-    #     try:
-    #         loop = asyncio.get_event_loop()
-    #     except RuntimeError:
-    #         loop = asyncio.new_event_loop()
-    #         asyncio.set_event_loop(loop)
-    #     return loop.run_until_complete(coro)
-
-    # def get_account_statement_sync(self, params: Dict[str, str]) -> str:
-    #     """Synchronous wrapper for get_account_statement"""
-    #     return self._run_async(self.get_account_statement(params))
-
 
     # @async_tool
     async def get_exchange_rates(self, *args, **kwargs) -> str:
@@ -583,8 +493,7 @@ class BankingTools:
         # @async_tool
     async def get_account_balance(self, customer_number: str) -> str:
         """Get customer account balance and details using their customer number
-        args:
-            params: Dictionary containing:
+
             customer_number: correct Customer number from profile info
         """
         
@@ -593,7 +502,7 @@ class BankingTools:
             logger.info(f"customer number {customer_number}")
             db = next(self.db_session())
             pin_record = db.query(PinManagement).filter(
-                PinManagement.customer_number == customer_number['customer_number']
+                PinManagement.customer_number == customer_number
             ).first()
             logger.info(f"pin record details {pin_record}")
             if not pin_record:
@@ -610,7 +519,7 @@ class BankingTools:
                 verify_response = await session.post(
                     f"{VERIFY_URL}",
                     json={
-                        "customer_number": customer_number['customer_number'],
+                        "customer_number": customer_number,
                         "secure_pin": decrypted_pin
                     }
                 )
@@ -626,7 +535,7 @@ class BankingTools:
                     return "User entered a wrong pin, remind user to enter correct pin or else this account can be blocked!"
                 
                 try:
-                    number = customer_number['customer_number']
+                    number = customer_number
                     client = await self.get_client()
                     # Apply the same SSL context to this client if needed
                     async with client as session:
@@ -668,25 +577,22 @@ class BankingTools:
     # @async_tool
     async def create_complaint(
         self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
-    ) -> Dict:
+        name:str, email:str, complaint_type:str, description:str, Mobile_Number:str
+    ) -> Optional[Dict]:
         """Create a new complaint for user
         Args:
-            __arg1: Dictionary containing:
                 name: Name of the user creating the complaint
                 email: Email address of the user creating the complaint
-                phone_number: Phone number of the user creating the complaint with country code
                 complaint_type: Type of complaint
                 description: Description of the complaint
-                Mobile Number: -> customer mobile number with "+" and country code from customer profile
+                Mobile_Number: -> customer mobile number with "+" and country code from customer profile
         """
         try:
-            phone_number = __arg1['Mobile Number']
-            if "+" in phone_number:
-                clean_number = phone_number
+            if "+" in Mobile_Number:
+                clean_number = Mobile_Number
                 logger.info("Plus sign is present")
             else:
-                clean_number = f"+{phone_number}"
+                clean_number = f"+{Mobile_Number}"
                 logger.info("Plus sign is not present, plus added")
             logger.info(f"clean number {clean_number}")
             db = next(self.db_session())
@@ -698,11 +604,11 @@ class BankingTools:
                 .first()
             
             complaint = Complaint(
-                name=__arg1['name'],
-                email=__arg1['email'],
-                phone_number= clean_number,
-                complaint_type=__arg1['complaint_type'],
-                description=__arg1['description'],
+                name=name,
+                email= email,
+                phone_number= Mobile_Number,
+                complaint_type=complaint_type,
+                description= description,
                 status=ComplainStatus.PENDING,
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
@@ -732,28 +638,28 @@ class BankingTools:
         finally:
             db.close()
 
-    def create_complaint_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def create_complaint_sync(self, name:str, email:str, complaint_type:str,description:str, Mobile_Number:str) -> Dict:
         """Synchronous wrapper for create_complaint"""
-        return self._run_async(self.create_complaint(__arg1))
+        return self._run_async(self.create_complaint(name, email, complaint_type,description, Mobile_Number))
 
     async def update_complaint(
         self,
-        __arg1: Dict[str, Any]  # Accept a single dictionary argument
+        email:str,
+        update_data:dict  # Accept a single dictionary argument
     ) -> Optional[Dict]:
         """Update complaint by user email
         Args:
-            __arg1: Dictionary containing:
                 email: Email address of the user used to create the complaint
                 update_data: Dictionary containing fields to update
         """
         try:
             db = next(self.db_session())
-            complaint = db.query(Complaint).filter(Complaint.email == __arg1['email']).first()
+            complaint = db.query(Complaint).filter(Complaint.email == email).first()
             
             if not complaint:
                 return None
             
-            for field, value in __arg1['update_data'].items():
+            for field, value in update_data.items():
                 if hasattr(complaint, field):
                     setattr(complaint, field, value)
             
@@ -779,22 +685,21 @@ class BankingTools:
         finally:
             db.close()
 
-    def update_complaint_sync(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
+    def update_complaint_sync(self, email:str, update_data:dict ) -> Optional[Dict]:
         """Synchronous wrapper for update_complaint"""
-        return self._run_async(self.update_complaint(__arg1))
+        return self._run_async(self.update_complaint(email, update_data))
 
     async def get_complaints_by_email(
         self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
-    ) -> List[Dict]:
+        email:str  # Accept a single dictionary argument
+    ) -> Optional[Dict]:
         """Get complaints by user email 
         Args:
-            __arg1: Dictionary containing:
                 email: Email address of the user used to create the complaint
         """
         try:
             db = next(self.db_session())
-            email = __arg1['email']
+            email = email
             complaints = db.query(Complaint).filter(Complaint.email == email).order_by(Complaint.created_at.desc()).all()
             
             return [{
@@ -814,74 +719,23 @@ class BankingTools:
         finally:
             db.close()
 
-    def get_complaints_by_email_sync(self, __arg1: Dict[str, str]) -> List[Dict]:
+    def get_complaints_by_email_sync(self, email:str) ->Optional[Dict]:
         """Synchronous wrapper for get_complaints_by_email"""
-        return self._run_async(self.get_complaints_by_email(__arg1))
+        return self._run_async(self.get_complaints_by_email(email))
     
-    
-    # async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
-    #     """
-    #     Generate a secure link with customer number and mobile number
-    #     Args:
-    #         __arg1: Dictionary containing:
-    #             customer_number: 5-digit customer number from profile
-    #             mobile_number: customer 12 digit mobile number (e.g 233558158591)
-    #     """
-    #     try:
-    #         customer_number = __arg1["customer_number"]
-    #         mobile_number = __arg1["mobile_number"]
-            
-    #         # Create and encrypt token
-    #         token = self.serializer.dumps({
-    #             'customer_number': __arg1["customer_number"],
-    #             'mobile_number': __arg1["mobile_number"]
-    #         })
-                        
-    #         # Log the generated token and data
-    #         logger.info(f"Generated token: {token}")
-    #         logger.info(f"Token data: {__arg1}")
-            
-    #         # Create the verification link
-    #         verification_link = f"{BACKEND_URL}/verify-pin?token={token}"
-            
-    #         logger.info(f"Secure link generated for customer {customer_number} and mobile {mobile_number}")
-    #         return verification_link
-            
-    #     except Exception as e:
-    #         logger.error(f"Error generating secure link for customer {customer_number}: {str(e)}")
-    #         raise e
 
-    async def generate_secure_link(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
+
+    async def generate_secure_link(self, customer_number:str, mobile_number:str) -> Optional[Dict]:
         """
         Generate a secure link with customer number and mobile number
         Args:
-            __arg1: Dictionary containing:
-                customer_number: 5-digit customer number from profile
+                customer_number: customer number from profile
                 mobile_number: customer 12 digit mobile number (e.g 233558158591)
         Returns:
             Either a verification link string or a dictionary with error information
         """
         try:
-            # Check if __arg1 is a string, parse it as JSON if it is
-            if isinstance(__arg1, str):
-                import json
-                try:
-                    __arg1 = json.loads(__arg1)
-                except json.JSONDecodeError as json_err:
-                    logger.error(f"Invalid JSON format: {str(json_err)}")
-                    return {"error": True, "message": f"Invalid JSON format try passing it as dict: {str(json_err)}", "data": __arg1}
-                
-            # Validate required fields
-            if "customer_number" not in __arg1:
-                logger.error("Missing required field: customer_number")
-                return {"error": True, "message": "Missing required field: customer_number", "data": __arg1}
-                
-            if "mobile_number" not in __arg1:
-                logger.error("Missing required field: mobile_number")
-                return {"error": True, "message": "Missing required field: mobile_number", "data": __arg1}
-            
-            customer_number = __arg1["customer_number"]
-            mobile_number = __arg1["mobile_number"]
+
             
             # Create and encrypt token
             token = self.serializer.dumps({
@@ -891,7 +745,7 @@ class BankingTools:
                         
             # Log the generated token and data
             logger.info(f"Generated token: {token}")
-            logger.info(f"Token data: {__arg1}")
+            logger.info(f"Token data: {customer_number} and {mobile_number}")
             
             # Create the verification link
             verification_link = f"{BACKEND_URL}/verify-pin?token={token}"
@@ -911,64 +765,15 @@ class BankingTools:
             "error": True,
             "message": f"Failed to generate secure link: {error_message}",
             "error_type": error_type,
-            "data": __arg1
+            "data": f"data: {customer_number} and {mobile_number}"
         }
     
-    def generate_secure_link_sync(self, __arg1: Dict[str, str]) -> List[Dict]:
+    def generate_secure_link_sync(self, customer_number:str, mobile_number:str) -> List[Dict]:
         """Synchronous wrapper for get_account_statement"""
-        return self._run_async(self.generate_secure_link(__arg1))    
+        return self._run_async(self.generate_secure_link(customer_number, mobile_number))    
 
 
-    # async def send_bank_statement_email(
-    #     self, args: Dict[str, Any]) -> Dict[str, Any]:
-    #     """
-    #     Send bank statement via email to customer.
-    #     Args:
-    #         args: Dictionary containing:
-    #                 customer_email: Request Valid email address from customer, not from profile
-    #                 statement_data: Raw statement data after getting account statement
-    #                 account_no: Account number for reference
-    #     Returns:
-    #         Dict: Response from email service or error details
-    #     """
-    #     try:
-    #         # Extract parameters
-    #         customer_email = args.get("customer_email")
-    #         statement_data = args.get("statement_data")
-    #         account_no = args.get("account_no")
-
-    #         # Add debug logging
-    #         logger.debug(f"Processing statement for account: {account_no}")
-    #         logger.debug(f"Statement data type: {type(statement_data)}")
-
-    #         # Validate required fields
-    #         if not all([customer_email, statement_data, account_no]):
-    #             raise ValueError("Missing required parameters: customer_email, statement_data, or account_no")
-
-    #         # Validate email format
-    #         if "@" not in customer_email or "." not in customer_email.split("@")[-1]:
-    #             raise ValueError("Invalid email address format")
-
-    #         # Let EmailService handle the formatting
-    #         formatted_statement = self.email_service._format_statement(statement_data, account_no)
-
-    #         # Send email
-    #         result = await self.email_service.send_statement_email(
-    #             to_email=customer_email,
-    #             statement_content=formatted_statement,
-    #             subject=f"Account Statement - {account_no}",
-    #             body=f"""<strong>Your Account Statement</strong>
-    #             <p>Account: {account_no}</p>
-    #             <p>Please find your requested bank statement attached.</p>"""
-    #         )
-            
-    #         return {"status": "success", "message": result}
-            
-    #     except Exception as e:
-    #         error_msg = f"Failed to process bank statement email: {str(e)}"
-    #         logger.error(error_msg)
-    #         return {"status": "error", "message": error_msg}
-    async def send_bank_statement_email(self, __arg1: Dict[str, Any]):
+    async def send_bank_statement_email(self,customer_email:str, account_no:str, customer_name:str, credit_account_id:str, transactions:dict):
         """
        Send bank statement via email to customer.
              Args:
@@ -991,24 +796,29 @@ class BankingTools:
                         }
                     }
         """
-        return await self.email_service.send_bank_statement_email(__arg1)
+        return await self.email_service.send_bank_statement_email(customer_email, account_no, customer_name, credit_account_id, transactions)
 
 
-    def send_bank_statement_email_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def send_bank_statement_email_sync(self, customer_email:str, account_no:str, customer_name:str, credit_account_id:str, transactions:dict) -> Dict:
         """Synchronous wrapper for send_bank_statement_email"""
         try:
-            return self._run_async(self.send_bank_statement_email(__arg1))
+            return self._run_async(self.send_bank_statement_email(customer_email, account_no, customer_name, credit_account_id, transactions))
         except Exception as e:
             logger.error(f"Synchronous wrapper error: {str(e)}")
             return {"error": f"Synchronous processing failed: {str(e)}"}      
 
     async def send_escalation_email(
-        self, __arg1: Dict[str, Any]
+        self,
+        escalating_to: str,
+        customer_email: str,
+        customer_name: str,
+        mobile_number: str,
+        conversation_summary: str,
+        customer_mood: str
     ) -> Dict[str, Any]:
         """
         Send a professional escalation email to bank supervisors.
         Args:
-            __arg1: Dictionary containing:
                 - escalating_to (str): Email of supervisor/department
                 - customer_email (str): Customer's email
                 - customer_name (str): Customer's full name
@@ -1019,32 +829,42 @@ class BankingTools:
         Returns:
             Dict[str, Any]: Email sending status and details
         """
-        return await self.email_service.send_escalation_email(__arg1)
+        return await self.email_service.send_escalation_email(escalating_to,
+                customer_email,
+                customer_name,
+                mobile_number,
+                conversation_summary,
+                customer_mood)
 
-    def send_escalation_email_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def send_escalation_email_sync(self,escalating_to: str,
+        customer_email: str,
+        customer_name: str,
+        mobile_number: str,
+        conversation_summary: str,
+        customer_mood: str
+    ) -> Dict[str, Any]:
+        
         """Synchronous wrapper for send_bank_statement_email"""
         try:
-            return self._run_async(self.send_escalation_email(__arg1))
+            return self._run_async(self.send_escalation_email(escalating_to,
+                customer_email,
+                customer_name,
+                mobile_number,
+                conversation_summary,
+                customer_mood))
         except Exception as e:
             logger.error(f"Synchronous wrapper error: {str(e)}")
             return {"error": f"Synchronous processing failed: {str(e)}"}   
 
-    async def get_secure_account_statement(self,__arg1: Dict[str, str]) -> Dict:
+    async def get_secure_account_statement(self, customer_number:str, customer_name:str, accountNo:str,startDate:str,endDate:str, Mobile_Number:str) -> Dict:
         """
-        Get account statement with PIN verification.
-        Process:
-        1. Retrieve encrypted PIN using customer number
-        2. Decrypt PIN using Fernet
-        3. Verify PIN with banking system
-        4. If verified, get account statement
-        
         Args:
-            customer_number: Customer 5 digit identification number
+            customer_number: Customer identification number
             customer_name : Customer name from profile info
             accountNo: Account number
             startDate: Start date (format: YYYYMMDD)
             endDate: End date (format: YYYYMMDD)
-            Mobile Number: customer mobile number with "+" and country code from customer profile
+            Mobile_Number: customer mobile number with "+" and country code from customer profile
         Returns:
             str: Account statement details if PIN verification successful
         """
@@ -1052,7 +872,7 @@ class BankingTools:
             # 1. Get encrypted PIN from database
             db = next(self.db_session())
             pin_record = db.query(PinManagement).filter(
-                PinManagement.customer_number == __arg1['customer_number']
+                PinManagement.customer_number == customer_number
             ).first()
             logger.info(f'pin record in db {pin_record}')
             if not pin_record:
@@ -1069,7 +889,7 @@ class BankingTools:
                 verify_response = await session.post(
                     f"{VERIFY_URL}",
                     json={
-                        "customer_number": __arg1['customer_number'],
+                        "customer_number": customer_number,
                         "secure_pin": decrypted_pin
                     }
                 )
@@ -1089,8 +909,8 @@ class BankingTools:
                 # 4. If PIN is verified, proceed to get account statement
                 try:
                     # Validate dates
-                    start_date = datetime.strptime(__arg1['startDate'], '%Y%m%d')
-                    end_date = datetime.strptime(__arg1['endDate'], '%Y%m%d')
+                    start_date = datetime.strptime(startDate, '%Y%m%d')
+                    end_date = datetime.strptime(endDate, '%Y%m%d')
                     if end_date < start_date:
                         return "End date cannot be earlier than start date"
                         
@@ -1100,19 +920,19 @@ class BankingTools:
                         response = await session.make_api_request(
                             "getAccountStatement",
                             params={
-                                "accountNo": __arg1['accountNo'],
-                                "startDate": __arg1['startDate'],
-                                "endDate": __arg1['endDate']
+                                "accountNo": accountNo,
+                                "startDate": startDate,
+                                "endDate": endDate
                             }
                         )
                                             # Delete the PIN record
                         db.delete(pin_record)
                         db.commit()
-                        logger.info(f"Deleted PIN record for customer_number {__arg1['customer_number']}")
+                        logger.info(f"Deleted PIN record for customer_number {customer_number}")
                         
                         # After successful statement retrieval, before returning response:
                         try:
-                            phone_number = __arg1['Mobile Number']
+                            phone_number = Mobile_Number
                             if "+" in phone_number:
                                 clean_number = phone_number
                                 logger.info("Plus sign is present")
@@ -1126,9 +946,9 @@ class BankingTools:
                                 .first()
 
                             statement_request = BankStatementRequest(
-                                customer_name=__arg1.get('customer_name', 'Unknown'),
-                                request_start_date=datetime.strptime(__arg1['startDate'], '%Y%m%d'),
-                                request_end_date=datetime.strptime(__arg1['endDate'], '%Y%m%d'),
+                                customer_name= customer_name,
+                                request_start_date=datetime.strptime(startDate, '%Y%m%d'),
+                                request_end_date=datetime.strptime(endDate, '%Y%m%d'),
                                 date=datetime.utcnow(),
                                 conversation_id=latest_conversation.id if latest_conversation else None
                             )
@@ -1150,26 +970,30 @@ class BankingTools:
             return f"An error occurred: {str(e)}"
         
 
-    def get_secure_account_statement_sync(self, __arg1: Dict[str, Any]) -> Optional[Dict]:
+    def get_secure_account_statement_sync(self, customer_number:str, customer_name:str, accountNo:str,startDate:str,endDate:str, Mobile_Number:str) -> Optional[Dict]:
         """Synchronous wrapper for get_account_statement"""
-        return self._run_async(self.get_secure_account_statement(__arg1))   
+        return self._run_async(self.get_secure_account_statement(customer_number, customer_name, accountNo,startDate,endDate, Mobile_Number))   
     
     async def create_bank_booking(
         self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
-    ) -> Dict:
+        customer_name:str,
+        email:str,
+        service_type:str,
+        service_details:dict,
+        Mobile_Number:str,
+        preferred_date:Optional[str]  # Accept a single dictionary argument
+    ) -> str:
         """Create a new bank service request booking
         Args:
-            __arg1: Dictionary containing:
                 customer_name: Name of the customer
                 email: Email address of the customer
                 service_type: Type of service (Account/Loan/Card/Transfer/Investment)
                 service_details: JSON object containing service-specific details
-                Mobile Number: customer mobile number with "+" and country code from customer profile
+                Mobile_Number: customer mobile number with "+" and country code from customer profile
                 preferred_date: Optional preferred date for processing
         """
         try:
-            phone_number = __arg1['Mobile Number']
+            phone_number = Mobile_Number
             if "+" in phone_number:
                 clean_number = phone_number
                 logger.info("Plus sign is present")
@@ -1191,11 +1015,11 @@ class BankingTools:
             expiry_date = datetime.utcnow() + timedelta(days=7)
             
             bank_request = BankRequest(
-                customer_name=__arg1['customer_name'],
-                email=__arg1['email'],
+                customer_name= customer_name,
+                email= email,
                 reference_code=reference_code,
-                service_type=__arg1['service_type'],
-                service_details=__arg1['service_details'],
+                service_type= service_type,
+                service_details= service_details,
                 status=RequestStatus.PENDING,
                 created_at=datetime.utcnow(),
                 expiry_date=expiry_date,
@@ -1222,23 +1046,27 @@ class BankingTools:
         finally:
             db.close()
     
-    def create_bank_booking_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def create_bank_booking_sync(self,customer_name:str,
+        email:str,
+        service_type:str,
+        service_details:dict,
+        Mobile_Number:str,
+        preferred_date:Optional[str] ) -> Dict:
         """Synchronous wrapper for create_complaint"""
-        return self._run_async(self.create_bank_booking(__arg1))
+        return self._run_async(self.create_bank_booking(customer_name,email, service_type, service_details, Mobile_Number,preferred_date))
     
     
     async def get_bank_booking(
         self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
+        reference_code:str  # Accept a single dictionary argument
     ) -> List[Dict]:
         """Get complaints by user email 
         Args:
-            __arg1: Dictionary containing:
                 reference_code: reference code of that booking
         """
         try:
             db = next(self.db_session())
-            booking = db.query(BankRequest).filter(BankRequest.reference_code == __arg1['reference_code']).first()
+            booking = db.query(BankRequest).filter(BankRequest.reference_code == reference_code).first()
             
             if not booking:
                 return {"error": "Booking not found"}
@@ -1260,9 +1088,9 @@ class BankingTools:
         finally:
             db.close()
 
-    def get_bank_booking_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def get_bank_booking_sync(self, reference_code:str) -> Dict:
         """Synchronous wrapper for create_complaint"""
-        return self._run_async(self.get_bank_booking(__arg1))
+        return self._run_async(self.get_bank_booking(reference_code))
     
 
     async def verify_account_details(self, customer_number: str) -> str:
@@ -1312,18 +1140,7 @@ class BankingTools:
         """
         try:
 
-            
-            # # Create and encrypt token
-            # token = self.serializer.dumps({
-            #     'customer_number': __arg1["customer_number"],
-            #     'mobile_number': __arg1["mobile_number"]
-            # })
-                        
-            # Log the generated token and data
-            # logger.info(f"Generated token: {token}")
-            # logger.info(f"Token data: {__arg1}")
-            
-            # Create the verification link
+
             verification_link = f"{BACKEND_URL}/create-account"
             logger.info(f" verification link {verification_link}")
             logger.info(f"Secure link generated for customer {verification_link}")
@@ -1339,12 +1156,11 @@ class BankingTools:
     
 
     async def create_appointment(
-        self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
-    ) -> Dict:
+        self, customer_name: str, email: str, phone_number: str,
+                               appointment_type: str, preferred_date: str, preferred_time: str,
+                               location: str, Mobile_Number: str, additional_notes: Optional[str] = None)  -> Dict:
         """Create a new appointment booking
         Args:
-            __arg1: Dictionary containing:
                 customer_name: Name of the customer
                 email: Email address of the customer
                 phone_number: Phone number with country code
@@ -1353,10 +1169,10 @@ class BankingTools:
                 preferred_time: Preferred time (HH:MM)
                 location: Location for the appointment
                 additional_notes: Optional additional notes
-                Mobile Number: customer mobile number with "+" and country code from customer profile
+                Mobile_Number: customer mobile number with "+" and country code from customer profile
         """
         try:
-            phone_number = __arg1['Mobile Number']
+            phone_number = Mobile_Number
             if "+" in phone_number:
                 clean_number = phone_number
                 logger.info("Plus sign is present")
@@ -1377,17 +1193,17 @@ class BankingTools:
             reference_code = await generate_reference_code()
             
             # Parse the datetime
-            preferred_date = datetime.strptime(__arg1['preferred_date'], "%Y-%m-%d")
+            preferred_date = datetime.strptime(preferred_date, "%Y-%m-%d")
             
             appointment = Appointment(
-                customer_name=__arg1['customer_name'],
-                email=__arg1['email'],
+                customer_name=customer_name,
+                email= email,
                 phone_number= clean_number,
-                appointment_type=__arg1['appointment_type'],
+                appointment_type= appointment_type,
                 preferred_date=preferred_date,
-                preferred_time=__arg1['preferred_time'],
-                location=__arg1['location'],
-                additional_notes=__arg1.get('additional_notes'),
+                preferred_time= preferred_time,
+                location= location,
+                additional_notes= additional_notes,
                 status=AppointmentStatus.PENDING,
                 reference_code=reference_code,
                 created_at=datetime.utcnow(),
@@ -1435,18 +1251,18 @@ class BankingTools:
         finally:
             db.close()
 
-    def create_appointment_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def create_appointment_sync(self, customer_name: str, email: str, phone_number: str,
+                              appointment_type: str, preferred_date: str, preferred_time: str,
+                              location: str, Mobile_Number: str, additional_notes: Optional[str] = None) -> Dict:
         """Synchronous wrapper for create_complaint"""
-        return self._run_async(self.create_appointment(__arg1))
+        return self._run_async(self.create_appointment(customer_name, email, phone_number, appointment_type, 
+            preferred_date, preferred_time, location, Mobile_Number, additional_notes, ))
 
 
     async def get_appointment(
         self,
-        __arg1: Dict[str, str]  # Accept a single dictionary argument
-    ) -> List[Dict]:
+        reference_code: str) -> List[Dict]:
         """Get complaints by user email 
-        Args:
-            __arg1: Dictionary containing:
                 reference_code: reference code of that booking
         Returns:
             Dictionary containing the appointment details or None if not found
@@ -1456,7 +1272,7 @@ class BankingTools:
             db = next(self.db_session())
             
             appointment = db.query(Appointment).filter(
-                Appointment.reference_code == __arg1['reference_code']
+                Appointment.reference_code == reference_code
             ).first()
             
             if not appointment:
@@ -1490,77 +1306,23 @@ class BankingTools:
         finally:
             db.close()
 
-    def get_appointment_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def get_appointment_sync(self, reference_code:str) -> List[Dict]:
         """Synchronous wrapper for create_complaint"""
-        return self._run_async(self.get_appointment(__arg1))
+        return self._run_async(self.get_appointment(reference_code))
     
 
-    # async def log_transfer(self, transfer_data: Dict[str, Any]) -> str:
-    #     """Log a transfer request to the database."""
-    #     try:
-    #         db = next(self.db_session())
-    #         transfer = Transfer(
-    #             customer_name=transfer_data['customer_name'],
-    #             amount=transfer_data['amount'],
-    #             credit_account_id=transfer_data['credit_account_id'],
-    #             debit_account_id=transfer_data['debit_account_id'],
-    #             payment_details=transfer_data['payment_details'],
-    #             date=datetime.utcnow(),
-    #             conversation_id=transfer_data['conversation_id']
-    #         )
-    #         db.add(transfer)
-    #         db.commit()
-    #         db.refresh(transfer)
-    #         return f"Transfer logged successfully with ID: {transfer.id}"
-    #     except Exception as e:
-    #         db.rollback()
-    #         logger.error(f"Error logging transfer: {str(e)}")
-    #         raise
-    #     finally:
-    #         db.close()
 
-    # async def log_bank_statement_request(self, request_data: Dict[str, Any]) -> str:
-    #     """Log a bank statement request to the database."""
-    #     try:
-    #         db = next(self.db_session())
-    #         request = BankStatementRequest(
-    #             customer_name=request_data['customer_name'],
-    #             request_start_date=request_data['request_start_date'],
-    #             request_end_date=request_data['request_end_date'],
-    #             date=datetime.utcnow(),
-    #             conversation_id=request_data['conversation_id']
-    #         )
-    #         db.add(request)
-    #         db.commit()
-    #         db.refresh(request)
-    #         return f"Bank statement request logged successfully with ID: {request.id}"
-    #     except Exception as e:
-    #         db.rollback()
-    #         logger.error(f"Error logging bank statement request: {str(e)}")
-    #         raise
-    #     finally:
-    #         db.close()
 
-    # def log_transfer_sync(self, transfer_data: Dict[str, Any]) -> str:
-    #     """Synchronous wrapper for log_transfer"""
-    #     return self._run_async(self.log_transfer(transfer_data))
-
-    # def log_bank_statement_request_sync(self, request_data: Dict[str, Any]) -> str:
-    #     """Synchronous wrapper for log_bank_statement_request"""
-    #     return self._run_async(self.log_bank_statement_request(request_data))
-
-    async def generate_otp(self, __arg1: Dict[str, str]) -> Dict[str, str]:
+    async def generate_otp(self,mobile_number:str) -> Dict[str, str]:
         """
         Generate a 6-digit OTP code for user via sms and store it in database before creating an account for new customers
         Args:
-            __arg1: Dictionary containing:
                 mobile_number: Customer's mobile number with country code (e.g., +233559158793)
         Returns:
             Dictionary with unique identifier for the OTP or error message
         """
         try:
             # Validate phone number format
-            mobile_number = __arg1.get('mobile_number', '').strip()
             if not mobile_number.startswith('+'):
                 return {
                     "error": "Invalid phone number format. Please include country code starting with '+' (e.g., +233559158793)"
@@ -1613,7 +1375,7 @@ class BankingTools:
                         
             return {
                 "identifier": identifier,
-                "message": "OTP sent successfully. Please check your WhatsApp messages."
+                "message": "OTP sent successfully. Please check your messages."
             }
             
         except Exception as e:
@@ -1623,11 +1385,15 @@ class BankingTools:
         finally:
             db.close()
 
-    async def verify_otp_and_generate_create_account_link(self, __arg1: Dict[str, str]) -> str:
+    def generate_otp_sync(self, mobile_number:str) -> Dict:
+        """Synchronous wrapper for get_account_statement"""
+        return self._run_async(self.generate_otp(mobile_number)) 
+    
+
+    async def verify_otp_and_generate_create_account_link(self, identifier:str, otp_code:str) -> str:
         """
         Verify OTP and generate account creation link if valid
         Args:
-            __arg1: Dictionary containing:
                 identifier: OTP identifier
                 otp_code: OTP code provided by user
         Returns:
@@ -1638,7 +1404,7 @@ class BankingTools:
             
             # Get OTP record
             otp_record = db.query(OTPManagement).filter(
-                OTPManagement.identifier == __arg1['identifier']
+                OTPManagement.identifier == identifier
             ).first()
             
             if not otp_record:
@@ -1653,7 +1419,7 @@ class BankingTools:
             if otp_record.is_used:
                 return "This OTP has already been used. Please request a new OTP."
             
-            if otp_record.otp_code != __arg1['otp_code']:
+            if otp_record.otp_code != otp_code:
                 return "Incorrect OTP code. Please try again."
             
             # Mark OTP as used
@@ -1673,26 +1439,19 @@ class BankingTools:
         finally:
             db.close()
 
-    def generate_otp_sync(self, __arg1: Dict[str, str]) -> Dict:
+
+    def verify_otp_and_generate_create_account_link_sync(self, identifier:str, otp_code:str) -> Dict:
         """Synchronous wrapper for get_account_statement"""
-        return self._run_async(self.generate_otp(__arg1)) 
-    
+        return self._run_async(self.verify_otp_and_generate_create_account_link(identifier, otp_code)) 
 
 
-    def verify_otp_and_generate_create_account_link_sync(self, __arg1: Dict[str, str]) -> Dict:
-        """Synchronous wrapper for get_account_statement"""
-        return self._run_async(self.verify_otp_and_generate_create_account_link(__arg1)) 
-
-
-    async def verify_credit_account(self, __arg1: Dict[str, str]) -> Dict[str, str]:
+    async def verify_credit_account(self, credit_account_number:str) -> Dict[str, str]:
         """verify credit account provided by the user if it really exist before making transfer
         Args:
-            __arg1: Dictionary containing:
                 credit_account_number: Credit account number provided by the user
         """             
         try:
 
-            credit_account_number = __arg1['credit_account_number']
             # number = credit_account_number['credit_account_number']
             # logger.info(f"credit account number{number}")
             logger.info(f"credit_account_number{credit_account_number}")
@@ -1726,23 +1485,22 @@ class BankingTools:
         except Exception as e:
             logger.error(f"Error fetching account details: {str(e)}")
             return f"Failed to get account details: {str(e)}"
-    def verify_credit_account_sync(self, __arg1: Dict[str, str]) -> Dict:
+        
+    def verify_credit_account_sync(self,credit_account_number:str) -> Dict:
         """Synchronous wrapper for get_account_details"""
-        return self._run_async(self.verify_credit_account(__arg1))
+        return self._run_async(self.verify_credit_account(credit_account_number))
     
 
-    async def send_whatsapp_audio_message(self, __arg1: Dict[str, str]) -> Dict[str, str]:
+    async def send_whatsapp_audio_message(self,phone_number:str, text_response:str) -> Dict[str, str]:
         """
         respond to user with audio
         Args:
-            __arg1: Dictionary containing:
                 phone_number: Recipient's from info
                 text_response: Text to convert to speech
         Returns: 
              audio only, don't add any extra text to the tool mesage, the only text should "play audio"...Avoid adding text like 'Please check your WhatsApp'
         """
         try:
-            phone_number = __arg1['phone_number']
             if "+" in phone_number:
                 clean_number = phone_number
                 logger.info("Plus sign is present")
@@ -1750,7 +1508,6 @@ class BankingTools:
                 clean_number = f"+{phone_number}"
                 logger.info("Plus sign is not present, plus added")
 
-            text_response = __arg1['text_response']
             # Generate S3 URL for the audio
             s3_audio_url = await text_to_whatsapp_audio(text_response)
             
@@ -1774,18 +1531,11 @@ class BankingTools:
             logging.error(f"Error sending WhatsApp audio message: {str(e)}")
             raise
 
-    def send_whatsapp_audio_message_sync(self, __arg1: Dict[str, str]) -> Dict:
+    def send_whatsapp_audio_message_sync(self, text_response:str , phone_number:str) -> Dict:
         """Synchronous wrapper for get_account_details"""
-        return self._run_async(self.send_whatsapp_audio_message(__arg1))
+        return self._run_async(self.send_whatsapp_audio_message(phone_number, text_response))
 
-    def verify_credit_account_sync(self, __arg1: Dict[str, str]) -> Dict:
-        """Synchronous wrapper for get_account_details"""
-        return self._run_async(self.verify_credit_account(__arg1))
     
-
-    def verify_credit_account_sync(self, __arg1: Dict[str, str]) -> Dict:
-        """Synchronous wrapper for get_account_details"""
-        return self._run_async(self.verify_credit_account(__arg1))
     
     # async def translate_to_amharic(self, __arg1: Dict[str, str]) -> str:
     #     """
@@ -1832,12 +1582,11 @@ class BankingTools:
     #         return None
         
 
-    async def translate_respone_to_am_om(self, __arg1: Dict[str, str]) -> Dict[str, str]:
+    async def translate_respone_to_am_om(self, english_response:str ,target_language:str ) -> str:
         """
         Am tool to help you translate your english response to amharic and afan Oromo.
 
         Args:
-            __arg1: Dictionary containing:
                 english_response: The text to be translated
                 target_language: The language to translate to (e.g., 'amharic' or 'afan oromo')
 
@@ -1846,8 +1595,8 @@ class BankingTools:
         """
         try:
             
-            target_language = __arg1['target_language']
-            text = __arg1['english_response']
+            # target_language = __arg1['target_language']
+            # text = __arg1['english_response']
             logger.info(f"translatin to {target_language}")
             # Create translator instance
             messages = [
@@ -1863,7 +1612,7 @@ class BankingTools:
                 },
                 {
                     "role": "user",
-                    "content": text
+                    "content": english_response
                 }
             ]
             llm = ChatGoogleGenerativeAI(
@@ -1880,71 +1629,136 @@ class BankingTools:
             logging.error(f"Translation error: {str(e)}")
             return None
 
-    def translate_respone_to_am_om_sync(self, __arg1: Dict[str, str]) -> str:
+    def translate_respone_to_am_om_sync(self,english_response, target_language) -> str:
         """Synchronous wrapper for translate_to_amharic"""
-        return self._run_async(self.translate_respone_to_am_om(__arg1))
+        return self._run_async(self.translate_respone_to_am_om(english_response,target_language))
+    
+    # async def translate_respone_to_am_om(self, args: Dict[str, str]) -> str:
+    #     """
+    #     Am tool to help you translate your english response to amharic and afan Oromo.
+    #     """
+    #     try:
+    #         target_language = args['target_language']
+    #         text = args['english_response']
+    #         # Create translator instance
+    #         translator = Translator()
+    #         logger.info(f"Translating text to {target_language}")
+    #         # Translate the text
+    #         translation = await translator.translate(text, dest=target_language)
+            
+    #         return translation.text
+    #     except Exception as e:
+    #         logger.error(f"Translation error: {e}")
+    #         raise e
 
+    # def translate_respone_to_am_om_sync(self, **kwargs) -> str:
+    #     """Synchronous wrapper for translate_to_amharic"""
+    #     # Convert keyword arguments to dictionary format expected by the async function
+    #     args = {
+    #         'english_response': kwargs['english_response'],
+    #         'target_language': kwargs['target_language']
+    #     }
+    #     return self._run_async(self.translate_respone_to_am_om(args))
+    
     def create_tools(self) -> List[Tool]:
         """Create and return a list of banking tools"""
         return [
-            Tool(
+            StructuredTool(
                 name="generate_secure_link",
-                func=self.generate_secure_link_sync,
-                description=self.generate_secure_link.__doc__
+                description=self.generate_secure_link.__doc__,
+                func=self.generate_secure_link_sync,  # Or async version with appropriate wrapper
+                args_schema=SecureLinkInput,
+                return_direct=False
             ),
-            Tool(
+            StructuredTool(
+                name="translate_respone_to_am_om",
+                description="Translate English text to Amharic (am) or Afan Oromo (om)",
+                func=self.translate_respone_to_am_om_sync,  # Or async version with appropriate wrapper
+                args_schema=TranslationInput,
+                return_direct=False
+            ),
+           StructuredTool(
                 name="send_whatsapp_audio_message",
-                func=self.send_whatsapp_audio_message_sync,
-                description=self.send_whatsapp_audio_message.__doc__
+                description=self.send_whatsapp_audio_message.__doc__,
+                func=self.send_whatsapp_audio_message_sync,  # Or async version with appropriate wrapper
+                args_schema= SendAudioInput,
+                return_direct=False
             ),
-            Tool(
-                name="verify_credit_account",
-                func=self.verify_credit_account_sync,
-                description=self.verify_credit_account.__doc__
-            ),
-            Tool(
-                name="create_appointment",
-                func=self.create_appointment_sync,
-                description=self.create_appointment.__doc__
-            ),
-            Tool(
-                name="get_appointment",
-                func=self.get_appointment_sync,
-                description=self.get_appointment.__doc__
-            ),
-            Tool(
-                name="send_bank_statement_email", 
-                func=self.send_bank_statement_email_sync, 
-                description=self.send_bank_statement_email.__doc__),
 
-            Tool(
-                name="send_excalation_email", 
-                func=self.send_escalation_email_sync, 
-                description=self.send_escalation_email.__doc__),
-            Tool(
-                name="create_complaint", 
-                func=self.create_complaint_sync, 
-                description=self.create_complaint.__doc__
+           StructuredTool(
+                name="verify_credit_account",
+                description=self.verify_credit_account.__doc__,
+                func=self.verify_credit_account_sync,  # Or async version with appropriate wrapper
+                args_schema= VerifyCreditAccount,
+                return_direct=False
             ),
-            Tool(
+
+
+            StructuredTool(
+                name="create_appointment",
+                description=self.create_appointment.__doc__,
+                func=self.create_appointment_sync,  # Or async version with appropriate wrapper
+                args_schema=AppointmentInput,
+                return_direct=False
+            ),
+            StructuredTool(
+                name="create_complaint",
+                description=self.create_complaint.__doc__,
+                func=self.create_complaint_sync,  # Or async version with appropriate wrapper
+                args_schema=ComplaintInput,
+                return_direct=False
+            ),
+            StructuredTool(
+                name="get_appointment",
+                description=self.get_appointment.__doc__,
+                func=self.get_appointment_sync,  # Or async version with appropriate wrapper
+                args_schema=GetAppointmentInput,
+                return_direct=False
+            ),
+
+            # Tool(
+            #     name="send_bank_statement_email", 
+            #     func=self.send_bank_statement_email_sync, 
+            #     description=self.send_bank_statement_email.__doc__),
+            StructuredTool(
+                name="send_bank_statement_email",
+                description=self.send_bank_statement_email.__doc__,
+                func=self.send_bank_statement_email_sync,  # Or async version with appropriate wrapper
+                args_schema=BankStatementInput,
+                return_direct=False
+            ),
+            StructuredTool(
+                name="send_escalation_email",
+                description=self.send_escalation_email.__doc__,
+                func=self.send_escalation_email_sync,  # Or async version with appropriate wrapper
+                args_schema=EscalationEmailInput,
+                return_direct=False
+            ),
+            StructuredTool(
                 name="get_secure_account_statement",
-                func=self.get_secure_account_statement_sync,
-                description=self.get_secure_account_statement.__doc__
+                description=self.get_secure_account_statement.__doc__,
+                func=self.get_secure_account_statement_sync,  # Or async version with appropriate wrapper
+                args_schema=AccountStatementInput,
+                return_direct=False
             ),
             # Tool(
             #     name="generate_create_account_link",
             #     func=self.generate_create_account_link_sync,
             #     description=self.generate_create_account_link.__doc__
             # ),
-            Tool(
+            StructuredTool(
                 name="generate_otp",
-                func=self.generate_otp_sync,
-                description=self.generate_otp.__doc__
+                description=self.generate_otp.__doc__,
+                func=self.generate_otp_sync,  # Or async version with appropriate wrapper
+                args_schema=GenerateOtpInput,
+                return_direct=False
             ),
-            Tool(
+            StructuredTool(
                 name="verify_otp_and_generate_create_account_link",
-                func=self.verify_otp_and_generate_create_account_link_sync,
-                description=self.verify_otp_and_generate_create_account_link.__doc__
+                description=self.verify_otp_and_generate_create_account_link.__doc__,
+                func=self.verify_otp_and_generate_create_account_link_sync,  # Or async version with appropriate wrapper
+                args_schema=GenerateCreateAccountInput,
+                return_direct=False
             ),
             # StructuredTool(
             #     name="get_secure_account_statement",
@@ -1953,61 +1767,50 @@ class BankingTools:
             #     args_schema = GetStatementInputSchema
 
             # ),
-            Tool(
+            StructuredTool(
                 name="get_complaints_by_email",
-                func=self.get_complaints_by_email_sync,
-                description=self.get_complaints_by_email.__doc__
+                description=self.get_complaints_by_email.__doc__,
+                func=self.get_complaints_by_email_sync,  # Or async version with appropriate wrapper
+                args_schema=GetComplaintsInput,
+                return_direct=False
             ),
-            Tool(
+            StructuredTool(
                 name="update_complaint",
-                func=self.update_complaint_sync,
-                description=self.update_complaint.__doc__
+                description=self.update_complaint.__doc__,
+                func=self.update_complaint_sync,  # Or async version with appropriate wrapper
+                args_schema=UpdateComplaintInput,
+                return_direct=False
             ),
-            Tool(
+    
+            StructuredTool(
                 name="get_account_balance",
-                func=self.get_account_balance_sync,
-                description=self.get_account_balance.__doc__
+                description=self.get_account_balance.__doc__,
+                func=self.get_account_balance_sync,  # Or async version with appropriate wrapper
+                args_schema=AccountBalanceInput,
+                return_direct=False
             ),
-            # Tool(
-            #     name="create_another_account",
-            #     func=self.create_account_only_sync,
-            #     description=self.create_account_only.__doc__
-            # ),
-            # Tool(
-            #     name="create_customer_and_account",
-            #     func=self.create_customer_and_account_sync,
-            #     description=self.create_customer_and_account.__doc__
-            # ),
-            Tool(
+            StructuredTool(
                 name="create_bank_booking",
-                func=self.create_bank_booking_sync,
-                description=self.create_bank_booking.__doc__
+                description=self.create_bank_booking.__doc__,
+                func=self.create_bank_booking_sync,  # Or async version with appropriate wrapper
+                args_schema= BankBookingInput,
+                return_direct=False
             ),
-            Tool(
+            StructuredTool(
                 name="get_bank_booking",
-                func=self.get_bank_booking_sync,
-                description=self.get_bank_booking.__doc__
+                description=self.get_bank_booking.__doc__,
+                func=self.get_bank_booking_sync,  # Or async version with appropriate wrapper
+                args_schema= GetBankBookingInput,
+                return_direct=False
             ),
-            Tool(
+
+            StructuredTool(
                 name="make_transfer",
-                func=self.make_transfer_sync,
-                description=self.make_transfer.__doc__
+                description=self.make_transfer.__doc__,
+                func=self.make_transfer_sync,  # Or async version with appropriate wrapper
+                args_schema=TransferInput,
+                return_direct=False
             ),
-            Tool(
-                name="translate_respone_to_am_om",
-                func=self.translate_respone_to_am_om_sync,
-                description=self.translate_respone_to_am_om.__doc__
-            ),
-            # Tool(
-            #     name="log_transfer",
-            #     func=self.log_transfer_sync,
-            #     description=self.log_transfer.__doc__
-            # ),
-            # Tool(
-            #     name="log_bank_statement_request",
-            #     func=self.log_bank_statement_request_sync,
-            #     description=self.log_bank_statement_request.__doc__
-            # ),
             Tool(
                 name="get_exchange_rates",
                 func=self.get_exchange_rates_sync,

@@ -53,3 +53,4 @@ psycopg2-binary
 google-cloud-speech==2.31.0
 langchain-google-community
 elevenlabs
+pydantic[email]
