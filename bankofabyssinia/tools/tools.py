@@ -1627,7 +1627,7 @@ class BankingTools:
 
         except Exception as e:
             logging.error(f"Translation error: {str(e)}")
-            return None
+            return e
 
     def translate_respone_to_am_om_sync(self,english_response, target_language) -> str:
         """Synchronous wrapper for translate_to_amharic"""
