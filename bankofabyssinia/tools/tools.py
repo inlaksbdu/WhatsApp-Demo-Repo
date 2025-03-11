@@ -58,8 +58,9 @@ TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY')
 os.environ['TOGETHER_API_KEY']=TOGETHER_API_KEY
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 os.environ['DEEPSEEK_API_KEY']= DEEPSEEK_API_KEY
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-os.environ['GEMINI_API_KEY'] = GEMINI_API_KEY
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+os.environ['GOOGLE_API_KEY'] = GOOGLE_API_KEY
+print(f'google api key{GOOGLE_API_KEY}')
 
 class GetStatementInputSchema(BaseModel):
     accountNo: str = Field(..., description="Account number")
