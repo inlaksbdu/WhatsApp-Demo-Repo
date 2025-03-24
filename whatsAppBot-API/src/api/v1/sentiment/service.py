@@ -36,11 +36,11 @@ class SentimentService:
         
         # Fill in actual counts
         for sentiment, count in results:
-            if sentiment and sentiment.upper() == SentimentType.POSITIVE:
+            if sentiment and sentiment.lower() == SentimentType.POSITIVE:
                 counts["positive"] = count
-            elif sentiment and sentiment.upper() == SentimentType.NEGATIVE:
+            elif sentiment and sentiment.lower() == SentimentType.NEGATIVE:
                 counts["negative"] = count
-            elif sentiment and sentiment.upper() == SentimentType.NEUTRAL:
+            elif sentiment and sentiment.lower() == SentimentType.NEUTRAL:
                 counts["neutral"] = count
             counts["total"] += count
             

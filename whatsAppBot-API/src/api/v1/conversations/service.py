@@ -91,7 +91,7 @@ class ConversationService:
                 cast(' | ', String)
             ).label('recent_messages')
         ).filter(
-            Conversation.customer_type.ilike('CUSTOMER'),  # Case-insensitive comparison
+            Conversation.customer_type.ilike('EXISTING'),  # Case-insensitive comparison
             Conversation.customer_name.ilike(f"%{name}%")
         ).group_by(
             Conversation.customer_name,
@@ -153,7 +153,7 @@ class ConversationService:
                 cast(' | ', String)
             ).label('recent_messages')
         ).filter(
-            Conversation.customer_type.ilike('CUSTOMER'),  # Case-insensitive comparison
+            Conversation.customer_type.ilike('EXISTING'),  # Case-insensitive comparison
             Conversation.phone_number.ilike(f"%{phone_number}%")
         ).group_by(
             Conversation.customer_name,

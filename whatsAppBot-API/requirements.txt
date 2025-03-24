@@ -33,13 +33,3 @@ black>=23.10.0
 flake8>=6.1.0
 isort>=5.12.0 
 
-
-	
-
-
- MALE = 17
-FEMALE = 13
-TOTAL 30
-
-Male Percentage = 17/30 * 360 = 56.7
-Female percentage = 13/30 * 360 = 43.3
